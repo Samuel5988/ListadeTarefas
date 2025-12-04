@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas - Temas Visuais</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .theme-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .theme-header {
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .theme-header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .theme-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .theme-content {
+            padding: 20px;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .color-swatch {
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .components-showcase {
+            margin-top: 20px;
+        }
+
+        .task-item {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            transform: translateX(5px);
+        }
+
+        .priority-high {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .priority-medium {
+            border-left: 4px solid #f39c12;
+        }
+
+        .priority-low {
+            border-left: 4px solid #27ae60;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .task-meta {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .fab-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .fab-button:hover {
+            transform: scale(1.1);
+        }
+
+        /* Tema 1: Serenidade Digital */
+        .serenity-primary { background: #3498db; }
+        .serenity-secondary { background: #2980b9; }
+        .serenity-accent { background: #5dade2; }
+        .serenity-success { background: #27ae60; }
+        .serenity-warning { background: #f39c12; }
+        .serenity-error { background: #e74c3c; }
+        .serenity-gray-1 { background: #ecf0f1; }
+        .serenity-gray-2 { background: #bdc3c7; }
+        .serenity-gray-3 { background: #95a5a6; }
+        .serenity-gray-4 { background: #7f8c8d; }
+
+        .serenity-header { background: linear-gradient(135deg, #3498db, #5dade2); }
+        .serenity-fab { background: #3498db; }
+        .serenity-checkbox { border: 2px solid #3498db; }
+
+        /* Tema 2: Foco Produtivo */
+        .focus-primary { background: #27ae60; }
+        .focus-secondary { background: #229954; }
+        .focus-accent { background: #52be80; }
+        .focus-success { background: #27ae60; }
+        .focus-warning { background: #f39c12; }
+        .focus-error { background: #e74c3c; }
+        .focus-gray-1 { background: #f8f9fa; }
+        .focus-gray-2 { background: #dee2e6; }
+        .focus-gray-3 { background: #adb5bd; }
+        .focus-gray-4 { background: #6c757d; }
+
+        .focus-header { background: linear-gradient(135deg, #27ae60, #52be80); }
+        .focus-fab { background: #27ae60; }
+        .focus-checkbox { border: 2px solid #27ae60; }
+
+        /* Tema 3: Clareza Mental */
+        .clarity-primary { background: #6c757d; }
+        .clarity-secondary { background: #495057; }
+        .clarity-accent { background: #868e96; }
+        .clarity-success { background: #28a745; }
+        .clarity-warning { background: #ffc107; }
+        .clarity-error { background: #dc3545; }
+        .clarity-gray-1 { background: #ffffff; }
+        .clarity-gray-2 { background: #f8f9fa; }
+        .clarity-gray-3 { background: #e9ecef; }
+        .clarity-gray-4 { background: #dee2e6; }
+
+        .clarity-header { background: linear-gradient(135deg, #6c757d, #868e96); }
+        .clarity-fab { background: #6c757d; }
+        .clarity-checkbox { border: 2px solid #6c757d; }
+
+        /* Tema 4: Alívio Visual */
+        .relief-primary { background: #a29bfe; }
+        .relief-secondary { background: #6c5ce7; }
+        .relief-accent { background: #b8b3ff; }
+        .relief-success { background: #55a3ff; }
+        .relief-warning { background: #ffeaa7; }
+        .relief-error { background: #ff7675; }
+        .relief-gray-1 { background: #f5f3ff; }
+        .relief-gray-2 { background: #dfe6ff; }
+        .relief-gray-3 { background: #c7c2ff; }
+        .relief-gray-4 { background: #a29bfe; }
+
+        .relief-header { background: linear-gradient(135deg, #a29bfe, #b8b3ff); }
+        .relief-fab { background: #a29bfe; }
+        .relief-checkbox { border: 2px solid #a29bfe; }
+
+        .mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 20px;
+            padding: 5px 15px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .themes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mode-toggle" onclick="toggleDarkMode()">🌙 Modo Escuro</div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Temas Visuais - Lista de Tarefas</h1>
+            <p>Explore as identidades visuais baseadas em alívio, controle, foco e calma</p>
+        </div>
+
+        <div class="themes-grid">
+            <!-- Tema 1: Serenidade Digital -->
+            <div class="theme-card">
+                <div class="theme-header serenity-header">
+                    <h2>🌊 Serenidade Digital</h2>
+                    <p>Alívio + Calma para mente turbulenta</p>
+                </div>
+                <div class="theme-content">
+                    <div class="color-palette">
+                        <div class="color-swatch serenity-primary">#3498db</div>
+                        <div class="color-swatch serenity-secondary">#2980b9</div>
+                        <div class="color-swatch serenity-success">#27ae60</div>
+                        <div class="color-swatch serenity-warning">#f39c12</div>
+                        <div class="color-swatch serenity-error">#e74c3c</div>
+                    </div>
+                    <div class="components-showcase">
+                        <h4>Exemplo de Tarefas:</h4>
+                        <div class="task-item priority-high">
+                            <div class="task-checkbox serenity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Revisar proposta de projeto</div>
+                                <div class="task-meta">Trabalho • Hoje • Alta prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-medium">
+                            <div class="task-checkbox serenity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Estudar JavaScript</div>
+                                <div class="task-meta">Estudos • Amanhã • Média prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-low">
+                            <div class="task-checkbox serenity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Comprar mantimentos</div>
+                                <div class="task-meta">Pessoal • Esta semana • Baixa prioridade</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tema 2: Foco Produtivo -->
+            <div class="theme-card">
+                <div class="theme-header focus-header">
+                    <h2>🎯 Foco Produtivo</h2>
+                    <p>Controle + Foco no que importa</p>
+                </div>
+                <div class="theme-content">
+                    <div class="color-palette">
+                        <div class="color-swatch focus-primary">#27ae60</div>
+                        <div class="color-swatch focus-secondary">#229954</div>
+                        <div class="color-swatch focus-success">#27ae60</div>
+                        <div class="color-swatch focus-warning">#f39c12</div>
+                        <div class="color-swatch focus-error">#e74c3c</div>
+                    </div>
+                    <div class="components-showcase">
+                        <h4>Exemplo de Tarefas:</h4>
+                        <div class="task-item priority-high">
+                            <div class="task-checkbox focus-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Finalizar relatório mensal</div>
+                                <div class="task-meta">Trabalho • Hoje • Alta prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-medium">
+                            <div class="task-checkbox focus-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Reunião com cliente</div>
+                                <div class="task-meta">Trabalho • 14h • Média prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-low">
+                            <div class="task-checkbox focus-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Organizar arquivos</div>
+                                <div class="task-meta">Pessoal • Esta semana • Baixa prioridade</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tema 3: Clareza Mental -->
+            <div class="theme-card">
+                <div class="theme-header clarity-header">
+                    <h2>💭 Clareza Mental</h2>
+                    <p>Minimalismo + Organização sem ruído</p>
+                </div>
+                <div class="theme-content">
+                    <div class="color-palette">
+                        <div class="color-swatch clarity-primary">#6c757d</div>
+                        <div class="color-swatch clarity-secondary">#495057</div>
+                        <div class="color-swatch clarity-success">#28a745</div>
+                        <div class="color-swatch clarity-warning">#ffc107</div>
+                        <div class="color-swatch clarity-error">#dc3545</div>
+                    </div>
+                    <div class="components-showcase">
+                        <h4>Exemplo de Tarefas:</h4>
+                        <div class="task-item priority-high">
+                            <div class="task-checkbox clarity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Enviar feedback</div>
+                                <div class="task-meta">Trabalho • Hoje • Alta prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-medium">
+                            <div class="task-checkbox clarity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Ler artigo técnico</div>
+                                <div class="task-meta">Estudos • Hoje • Média prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-low">
+                            <div class="task-checkbox clarity-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Agendar consulta</div>
+                                <div class="task-meta">Pessoal • Próxima semana • Baixa prioridade</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tema 4: Alívio Visual -->
+            <div class="theme-card">
+                <div class="theme-header relief-header">
+                    <h2>🌸 Alívio Visual</h2>
+                    <p>Softness + Feedback satisfatório</p>
+                </div>
+                <div class="theme-content">
+                    <div class="color-palette">
+                        <div class="color-swatch relief-primary">#a29bfe</div>
+                        <div class="color-swatch relief-secondary">#6c5ce7</div>
+                        <div class="color-swatch relief-success">#55a3ff</div>
+                        <div class="color-swatch relief-warning">#ffeaa7</div>
+                        <div class="color-swatch relief-error">#ff7675</div>
+                    </div>
+                    <div class="components-showcase">
+                        <h4>Exemplo de Tarefas:</h4>
+                        <div class="task-item priority-high">
+                            <div class="task-checkbox relief-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Celebrar conquista!</div>
+                                <div class="task-meta">Pessoal • Hoje • Alta prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-medium">
+                            <div class="task-checkbox relief-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Brainstorm novas ideias</div>
+                                <div class="task-meta">Criativo • Hoje • Média prioridade</div>
+                            </div>
+                        </div>
+                        <div class="task-item priority-low">
+                            <div class="task-checkbox relief-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Planejar semana</div>
+                                <div class="task-meta">Organização • Domingo • Baixa prioridade</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header">
+            <h2>Como Escolher</h2>
+            <p>Cada tema foi criado para evocar emoções específicas. Qual deles mais te faz sentir <strong>aliviado, em controle, focado e calmo</strong>?</p>
+            <p>Explore os exemplos de tarefas e veja como cada prioridade (alta/média/baixa) se destaca visualmente.</p>
+        </div>
+    </div>
+
+    <div class="fab-button serenity-fab" onclick="showCreateModal()">+</div>
+
+    <script>
+        let currentTheme = 'serenity';
+        let isDarkMode = false;
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+            const toggle = document.querySelector('.mode-toggle');
+
+            if (isDarkMode) {
+                body.style.background = '#1a1a1a';
+                body.style.color = '#e0e0e0';
+                toggle.textContent = '☀️ Modo Claro';
+            } else {
+                body.style.background = '#f8f9fa';
+                body.style.color = '#333';
+                toggle.textContent = '🌙 Modo Escuro';
+            }
+        }
+
+        function showCreateModal() {
+            alert('Modal de criação de tarefa apareceria aqui com: título, descrição, prioridade, categoria e lembrete!');
+        }
+
+        // Animação suave ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.theme-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

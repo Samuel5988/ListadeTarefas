@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas - Direções de Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6c757d;
+            --primary-dark: #495057;
+            --primary-light: #868e96;
+            --success: #28a745;
+            --warning: #ffc107;
+            --error: #dc3545;
+            --gray-1: #ffffff;
+            --gray-2: #f8f9fa;
+            --gray-3: #e9ecef;
+            --gray-4: #dee2e6;
+            --gray-5: #ced4da;
+            --gray-6: #adb5bd;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-2);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: var(--gray-1);
+            border: 1px solid var(--gray-4);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .mockup-container {
+            background: var(--gray-1);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .mockup-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mockup-title {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .mockup-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .mockup-content {
+            padding: 20px;
+            min-height: 600px;
+        }
+
+        .mockup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        /* Estilos base para diferentes direções */
+        .direction-minimal {
+            padding: 20px;
+            background: var(--gray-1);
+        }
+
+        .direction-structured {
+            padding: 20px;
+            background: var(--gray-1);
+        }
+
+        .direction-focused {
+            padding: 20px;
+            background: var(--gray-1);
+        }
+
+        .direction-organized {
+            padding: 20px;
+            background: var(--gray-1);
+        }
+
+        /* Componentes base */
+        .task-item {
+            background: var(--gray-1);
+            border: 1px solid var(--gray-4);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .task-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .task-checkbox:hover {
+            border-color: var(--primary-dark);
+            background: rgba(108, 117, 125, 0.1);
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .task-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .task-category {
+            background: var(--gray-3);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .priority-indicator {
+            width: 4px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+
+        .priority-high { background: var(--error); }
+        .priority-medium { background: var(--warning); }
+        .priority-low { background: var(--success); }
+
+        /* Direção 1: Minimalista */
+        .minimal-task {
+            position: relative;
+            padding-left: 20px;
+            background: var(--gray-1);
+            border-bottom: 1px solid var(--gray-4);
+            padding: 12px 12px 12px 28px;
+        }
+
+        .minimal-task:hover {
+            background: var(--gray-2);
+        }
+
+        .minimal-task .task-title {
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .minimal-task .task-meta {
+            font-size: 0.75rem;
+        }
+
+        /* Direção 2: Estruturado */
+        .structured-sidebar {
+            width: 250px;
+            background: var(--gray-2);
+            border-right: 1px solid var(--gray-4);
+            padding: 20px;
+        }
+
+        .structured-main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .category-section {
+            margin-bottom: 24px;
+        }
+
+        .category-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-count {
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* Direção 3: Focado */
+        .focused-header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .focused-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Direção 4: Organizado */
+        .organized-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+        }
+
+        .priority-column {
+            background: var(--gray-2);
+            border-radius: var(--border-radius);
+            padding: 20px;
+        }
+
+        .priority-column h3 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .priority-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Modal de Criação */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--gray-1);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-4);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--gray-4);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: var(--gray-1);
+            cursor: pointer;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-3);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-4);
+        }
+
+        /* FAB Button */
+        .fab-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .fab-button:hover {
+            transform: scale(1.1);
+            background: var(--primary-dark);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .empty-description {
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .mockup-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .organized-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .structured-sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--gray-4);
+            }
+
+            .focused-stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        /* Animações */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideIn 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Direções de Design</h1>
+            <p>Explore diferentes abordagens visuais para seu app Lista de Tarefas</p>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-btn active" onclick="showDirection('minimal')">Minimalista</button>
+            <button class="nav-btn" onclick="showDirection('structured')">Estruturado</button>
+            <button class="nav-btn" onclick="showDirection('focused')">Focado</button>
+            <button class="nav-btn" onclick="showDirection('organized')">Organizado</button>
+            <button class="nav-btn" onclick="showDirection('modal')">Modal Criação</button>
+        </div>
+
+        <!-- Direção 1: Minimalista -->
+        <div id="direction-minimal" class="mockup-container">
+            <div class="mockup-header">
+                <div class="mockup-title">📝 Minimalista Claro</div>
+                <div class="mockup-badges">
+                    <span class="badge">Zero distrações</span>
+                    <span class="badge">Leitura rápida</span>
+                    <span class="badge">Foco total</span>
+                </div>
+            </div>
+            <div class="mockup-content direction-minimal">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="font-weight: 300; color: var(--primary);">Hoje, 4 de Dezembro</h2>
+                        <p style="color: var(--text-secondary);">5 tarefas • 2 de alta prioridade</p>
+                    </div>
+
+                    <div class="minimal-task">
+                        <div class="priority-indicator priority-high"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Finalizar proposta de projeto</div>
+                                <div class="task-meta">
+                                    <span class="task-category">Trabalho</span>
+                                    <span>Hoje, 18h</span>
+                                    <span>Alta prioridade</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="minimal-task">
+                        <div class="priority-indicator priority-medium"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Estudar JavaScript - Arrays</div>
+                                <div class="task-meta">
+                                    <span class="task-category">Estudos</span>
+                                    <span>Hoje, 20h</span>
+                                    <span>Média prioridade</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="minimal-task">
+                        <div class="priority-indicator priority-low"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox" style="background: var(--success); border-color: var(--success);"></div>
+                            <div class="task-content">
+                                <div class="task-title" style="text-decoration: line-through; opacity: 0.6;">Responder e-mails pendentes</div>
+                                <div class="task-meta">
+                                    <span class="task-category">Trabalho</span>
+                                    <span>Concluído</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" style="display: none;">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-title">Nenhuma tarefa hoje</div>
+                        <div class="empty-description">
+                            Adicione sua primeira tarefa para começar a organizar seu dia
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateModal()">Criar Primeira Tarefa</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direção 2: Estruturado -->
+        <div id="direction-structured" class="mockup-container" style="display: none;">
+            <div class="mockup-header">
+                <div class="mockup-title">🗂️ Estruturado por Categorias</div>
+                <div class="mockup-badges">
+                    <span class="badge">Organização clara</span>
+                    <span class="badge">Separação visual</span>
+                    <span class="badge">Contexto mantido</span>
+                </div>
+            </div>
+            <div class="mockup-content" style="display: flex; height: 600px;">
+                <div class="structured-sidebar">
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h3 style="margin: 0;">Categorias</h3>
+                            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="showCreateCategoryModal()">
+                                + Nova
+                            </button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-weight: 500; display: flex; justify-content: space-between; padding: 8px 12px; background: var(--primary); color: white; border-radius: 6px;">
+                            <span>📋 Tarefas</span>
+                            <span>5</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; padding: 8px 12px;">
+                            <span>💼 Trabalho</span>
+                            <span>3</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; padding: 8px 12px;">
+                            <span>📚 Estudos</span>
+                            <span>2</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="structured-main">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="font-weight: 300; margin-bottom: 8px;">📋 Tarefas</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">5 tarefas ativas</p>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="priority-indicator priority-high"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Finalizar proposta de projeto</div>
+                                <div class="task-description">Revisar orçamento e enviar para cliente até 18h</div>
+                                <div class="task-meta">
+                                    <span>💼 Trabalho • Hoje, 18h</span>
+                                    <span>⚡ Alta</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="priority-indicator priority-medium"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Estudar JavaScript - Arrays</div>
+                                <div class="task-description">Continuar módulo de Arrays e Métodos</div>
+                                <div class="task-meta">
+                                    <span>📚 Estudos • Hoje, 20h</span>
+                                    <span>🟡 Média</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="priority-indicator priority-low"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox" style="background: var(--success); border-color: var(--success);"></div>
+                            <div class="task-content">
+                                <div class="task-title" style="text-decoration: line-through; opacity: 0.6;">Comprar mantimentos</div>
+                                <div class="task-description" style="text-decoration: line-through; opacity: 0.6;">Frutas, verduras e itens básicos</div>
+                                <div class="task-meta">
+                                    <span>🏠 Pessoal • Concluído</span>
+                                    <span>🟢 Baixa</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="priority-indicator priority-medium"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Pesquisar sobre React Hooks</div>
+                                <div class="task-description">Estudar useEffect e useState em profundidade</div>
+                                <div class="task-meta">
+                                    <span>📚 Estudos • Amanhã</span>
+                                    <span>🟡 Média</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="priority-indicator priority-low"></div>
+                        <div class="task-header">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Agendar consulta médica</div>
+                                <div class="task-description">Check-up anual de rotina</div>
+                                <div class="task-meta">
+                                    <span>🏠 Pessoal • Próxima semana</span>
+                                    <span>🟢 Baixa</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direção 3: Focado -->
+        <div id="direction-focused" class="mockup-container" style="display: none;">
+            <div class="mockup-header">
+                <div class="mockup-title">🎯 Focado no Agora</div>
+                <div class="mockup-badges">
+                    <span class="badge">Prioridade visível</span>
+                    <span class="badge">Stats motivadoras</span>
+                    <span class="badge">Clareza total</span>
+                </div>
+            </div>
+            <div class="mockup-content direction-focused">
+                <div class="focused-header">
+                    <h2 style="margin-bottom: 8px;">Seu Foco de Hoje</h2>
+                    <p style="opacity: 0.9;">Concentre no que realmente importa</p>
+                    <div class="focused-stats">
+                        <div class="stat">
+                            <div class="stat-number">2</div>
+                            <div class="stat-label">Tarefas Críticas</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">5</div>
+                            <div class="stat-label">Total do Dia</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">80%</div>
+                            <div class="stat-label">Concluído Semana</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: var(--error); font-size: 1.2rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <span>🔥</span> Crítico - Faça Agora
+                        </h3>
+
+                        <div class="task-item" style="border-left: 4px solid var(--error); background: rgba(220, 53, 69, 0.05);">
+                            <div class="task-header">
+                                <div class="task-checkbox" style="border-color: var(--error);"></div>
+                                <div class="task-content">
+                                    <div class="task-title" style="font-size: 1.1rem;">Finalizar proposta de projeto</div>
+                                    <div class="task-description" style="color: var(--error);">Deadline em 2 horas - Cliente esperando</div>
+                                    <div class="task-meta">
+                                        <span>⏰ Vence: Hoje, 18h</span>
+                                        <span>⚡ Urgente</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="task-item" style="border-left: 4px solid var(--error); background: rgba(220, 53, 69, 0.05); margin-top: 16px;">
+                            <div class="task-header">
+                                <div class="task-checkbox" style="border-color: var(--error);"></div>
+                                <div class="task-content">
+                                    <div class="task-title" style="font-size: 1.1rem;">Ligar cliente importante</div>
+                                    <div class="task-description" style="color: var(--error);">Feedback aguardado sobre projeto</div>
+                                    <div class="task-meta">
+                                        <span>⏰ Vence: Hoje, 17h</span>
+                                        <span>⚡ Urgente</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: var(--warning); font-size: 1.2rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <span>⚡</span> Importante - Planeje Hoje
+                        </h3>
+
+                        <div class="task-item" style="border-left: 4px solid var(--warning); background: rgba(255, 193, 7, 0.05);">
+                            <div class="task-header">
+                                <div class="task-checkbox" style="border-color: var(--warning);"></div>
+                                <div class="task-content">
+                                    <div class="task-title">Estudar JavaScript</div>
+                                    <div class="task-description">Continuar módulo de Arrays e Métodos</div>
+                                    <div class="task-meta">
+                                        <span>📅 Hoje, 20h</span>
+                                        <span>🟡 Média</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="color: var(--success); font-size: 1.2rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <span>🌱</span> Quando Puder - Baixa Prioridade
+                        </h3>
+
+                        <div class="task-item" style="opacity: 0.7;">
+                            <div class="task-header">
+                                <div class="task-checkbox"></div>
+                                <div class="task-content">
+                                    <div class="task-title">Comprar mantimentos</div>
+                                    <div class="task-meta">
+                                        <span>📅 Esta semana</span>
+                                        <span>🟢 Baixa</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direção 4: Organizado -->
+        <div id="direction-organized" class="mockup-container" style="display: none;">
+            <div class="mockup-header">
+                <div class="mockup-title">📊 Organizado por Prioridades</div>
+                <div class="mockup-badges">
+                    <span class="badge">Visualização clara</span>
+                    <span class="badge">Drag & Drop</span>
+                    <span class="badge">Quick reorder</span>
+                </div>
+            </div>
+            <div class="mockup-content direction-organized">
+                <div class="organized-grid">
+                    <div class="priority-column">
+                        <h3 style="display: flex; align-items: center; gap: 8px;">
+                            <span class="priority-dot" style="background: var(--error);"></span>
+                            Alta Prioridade
+                            <span style="background: var(--error); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">2</span>
+                        </h3>
+
+                        <div class="task-item" style="cursor: move;">
+                            <div style="display: flex; align-items: start; gap: 12px;">
+                                <div style="color: var(--text-muted);">⋮⋮</div>
+                                <div>
+                                    <div class="task-title" style="margin-bottom: 4px;">Finalizar proposta</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Trabalho • 18h</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="task-item" style="cursor: move; margin-top: 12px;">
+                            <div style="display: flex; align-items: start; gap: 12px;">
+                                <div style="color: var(--text-muted);">⋮⋮</div>
+                                <div>
+                                    <div class="task-title" style="margin-bottom: 4px;">Ligar cliente</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Trabalho • 17h</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="priority-column">
+                        <h3 style="display: flex; align-items: center; gap: 8px;">
+                            <span class="priority-dot" style="background: var(--warning);"></span>
+                            Média Prioridade
+                            <span style="background: var(--warning); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">2</span>
+                        </h3>
+
+                        <div class="task-item" style="cursor: move;">
+                            <div style="display: flex; align-items: start; gap: 12px;">
+                                <div style="color: var(--text-muted);">⋮⋮</div>
+                                <div>
+                                    <div class="task-title" style="margin-bottom: 4px;">Estudar JavaScript</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Estudos • 20h</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="task-item" style="cursor: move; margin-top: 12px;">
+                            <div style="display: flex; align-items: start; gap: 12px;">
+                                <div style="color: var(--text-muted);">⋮⋮</div>
+                                <div>
+                                    <div class="task-title" style="margin-bottom: 4px;">Reunião equipe</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Trabalho • Amanhã 14h</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="priority-column">
+                        <h3 style="display: flex; align-items: center; gap: 8px;">
+                            <span class="priority-dot" style="background: var(--success);"></span>
+                            Baixa Prioridade
+                            <span style="background: var(--success); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">1</span>
+                        </h3>
+
+                        <div class="task-item" style="cursor: move;">
+                            <div style="display: flex; align-items: start; gap: 12px;">
+                                <div style="color: var(--text-muted);">⋮⋮</div>
+                                <div>
+                                    <div class="task-title" style="margin-bottom: 4px;">Comprar mantimentos</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">Pessoal • Esta semana</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Criação de Tarefa -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <div class="modal-header">✨ Nova Tarefa</div>
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Título *</label>
+                    <input type="text" class="form-input" placeholder="O que precisa ser feito?" value="">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-input form-textarea" placeholder="Detalhes adicionais (opcional)..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Prioridade</label>
+                        <select class="form-select">
+                            <option value="high">🔴 Alta</option>
+                            <option value="medium" selected>🟡 Média</option>
+                            <option value="low">🟢 Baixa</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Categoria</label>
+                        <select class="form-select">
+                            <option value="tasks">📋 Tarefas</option>
+                            <option value="work">💼 Trabalho</option>
+                            <option value="studies">📚 Estudos</option>
+                            <option value="personal">🏠 Pessoal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Lembretes</label>
+                    <input type="datetime-local" class="form-input" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleReminder()" style="width: 100%;">
+                        + Adicionar Lembrete
+                    </button>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveTask()">Criar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Criação de Categoria -->
+    <div class="modal-overlay" id="createCategoryModal">
+        <div class="modal">
+            <div class="modal-header">📁 Nova Categoria</div>
+            <form>
+                <div class="form-group">
+                    <label class="form-label">Nome da Categoria *</label>
+                    <input type="text" class="form-input" placeholder="Ex: Projetos, Compras, etc." value="">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateCategoryModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCategory()">Criar Categoria</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <button class="fab-button" onclick="showCreateModal()">+</button>
+
+    <script>
+        let currentDirection = 'minimal';
+
+        function showDirection(direction) {
+            // Hide all directions
+            document.querySelectorAll('.mockup-container').forEach(container => {
+                container.style.display = 'none';
+            });
+
+            // Show selected direction
+            const selectedContainer = document.getElementById(`direction-${direction}`);
+            if (selectedContainer) {
+                selectedContainer.style.display = 'block';
+                selectedContainer.classList.add('animate-in');
+            }
+
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            currentDirection = direction;
+        }
+
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function showCreateCategoryModal() {
+            document.getElementById('createCategoryModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideCreateCategoryModal() {
+            document.getElementById('createCategoryModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function saveTask() {
+            // Simulate saving
+            hideCreateModal();
+
+            // Show success feedback
+            const fab = document.querySelector('.fab-button');
+            fab.innerHTML = '✓';
+            fab.style.background = 'var(--success)';
+
+            setTimeout(() => {
+                fab.innerHTML = '+';
+                fab.style.background = 'var(--primary)';
+            }, 2000);
+        }
+
+        function saveCategory() {
+            // Simulate saving category
+            hideCreateCategoryModal();
+
+            // Show success feedback
+            alert('Categoria criada com sucesso! (Simulação)');
+        }
+
+        function toggleReminder() {
+            const reminderInput = document.querySelector('input[type="datetime-local"]');
+            const reminderButton = event.target;
+
+            if (reminderInput.style.display === 'none') {
+                reminderInput.style.display = 'block';
+                reminderButton.textContent = '- Remover Lembrete';
+                reminderButton.classList.remove('btn-secondary');
+                reminderButton.classList.add('btn-primary');
+            } else {
+                reminderInput.style.display = 'none';
+                reminderButton.textContent = '+ Adicionar Lembrete';
+                reminderButton.classList.remove('btn-primary');
+                reminderButton.classList.add('btn-secondary');
+            }
+        }
+
+        // Close modal on overlay click
+        document.getElementById('createModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCreateModal();
+            }
+        });
+
+        document.getElementById('createCategoryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCreateCategoryModal();
+            }
+        });
+
+        // Checkbox interactions
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('task-checkbox')) {
+                if (e.target.style.background === 'var(--success)') {
+                    e.target.style.background = '';
+                    e.target.style.borderColor = 'var(--primary)';
+                } else {
+                    e.target.style.background = 'var(--success)';
+                    e.target.style.borderColor = 'var(--success)';
+                }
+            }
+        });
+
+        // Add drag and drop hint
+        document.querySelectorAll('.priority-column').forEach(column => {
+            column.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(108, 117, 125, 0.1)';
+            });
+
+            column.addEventListener('dragleave', function(e) {
+                this.style.background = '';
+            });
+        });
+
+        // Initialize animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.mockup-container');
+            container.classList.add('animate-in');
+        });
+    </script>
+</body>
+</html>
