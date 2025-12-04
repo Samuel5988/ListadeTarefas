@@ -35,7 +35,7 @@ workflow_status:
 
   # Phase 1: Planning
   prd: docs/PRD.md  # agent: pm
-  validate-prd: docs/prd-validation-report-2025-12-04.md  # agent: pm
+  validate-prd: docs/complete-validation-report-2025-12-04.md  # agent: pm
   create-design: docs/ux-design-specification.md  # agent: ux-designer
 
   # Phase 2: Solutioning
