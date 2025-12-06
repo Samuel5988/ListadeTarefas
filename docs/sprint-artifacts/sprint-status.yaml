@@ -1,0 +1,69 @@
+# generated: 2025-12-06
+# project: ListadeTarefas
+# project_key: LISTA-001
+# tracking_system: file-system
+# story_location: "{project-root}/docs/sprint-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-12-06
+project: ListadeTarefas
+project_key: LISTA-001
+tracking_system: file-system
+story_location: "{project-root}/docs/sprint-artifacts"
+
+development_status:
+  # Epic 1: Fundação da Aplicação
+  epic-1: in-progress
+  1-1-estrutura-do-projeto-e-configuracao-inicial: ready-for-dev
+  1-2-sistema-de-estado-centralizado: backlog
+  1-3-sistema-de-persistencia-local: backlog
+  1-4-sistema-de-temas-light-dark: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Gerenciamento de Tarefas
+  epic-2: backlog
+  2-1-componente-task-card: backlog
+  2-2-formulario-de-criacao-de-tarefas: backlog
+  2-3-edicao-e-remocao-de-tarefas: backlog
+  2-4-marcacao-de-conclusao: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Organização e Priorização
+  epic-3: backlog
+  3-1-sistema-de-categorias: backlog
+  3-2-associacao-de-tarefas-a-categorias: backlog
+  3-3-sistema-de-prioridades-visuais: backlog
+  3-4-modificacao-visual-de-prioridades: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Lembretes e Notificações
+  epic-4: backlog
+  4-1-configuracao-de-lembretes: backlog
+  4-2-notificacoes-visuais-de-lembretes: backlog
+  4-3-filtro-de-tarefas-com-lembretes: backlog
+  4-4-adiamento-de-lembretes: backlog
+  epic-4-retrospective: optional
