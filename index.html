@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lista de Tarefas - Aplicativo web para gerenciamento de tarefas">
+    <title>Lista de Tarefas</title>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/themes.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200" role="banner">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <h1 class="text-xl font-semibold text-gray-900">Lista de Tarefas</h1>
+                <!-- Botão de tema será adicionado futuramente -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Placeholder para futuros componentes -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium mb-4">Bem-vindo!</h2>
+                <p class="text-gray-600">Seu aplicativo de lista de tarefas está sendo configurado.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-16" role="contentinfo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p class="text-center text-sm text-gray-500">
+                © 2024 Lista de Tarefas. Desenvolvido com HTML5, CSS3 e JavaScript.
+            </p>
+        </div>
+    </footer>
+
+    <!-- App Module -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

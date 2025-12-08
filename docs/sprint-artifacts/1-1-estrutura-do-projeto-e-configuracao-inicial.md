@@ -1,6 +1,6 @@
 # Story 1.1: Estrutura do Projeto e Configuração Inicial
 
-Status: ready-for-dev
+Status: Ready for Review
 
 ## Story
 
@@ -22,36 +22,36 @@ Para ter uma base organizada para o desenvolvimento.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Criar estrutura de pastas (AC: 1)
-  - [ ] Subtask 1.1: Criar pasta styles/ com arquivos CSS base
-  - [ ] Subtask 1.2: Criar pasta components/ para futuros componentes
-  - [ ] Subtask 1.3: Criar pasta services/ para lógica de negócio
-  - [ ] Subtask 1.4: Criar pasta state/ para gerenciamento de estado
-  - [ ] Subtask 1.5: Criar pasta utils/ para utilitários
-  - [ ] Subtask 1.6: Criar pasta assets/icons/ para recursos estáticos
+- [x] Task 1: Criar estrutura de pastas (AC: 1)
+  - [x] Subtask 1.1: Criar pasta styles/ com arquivos CSS base
+  - [x] Subtask 1.2: Criar pasta components/ para futuros componentes
+  - [x] Subtask 1.3: Criar pasta services/ para lógica de negócio
+  - [x] Subtask 1.4: Criar pasta state/ para gerenciamento de estado
+  - [x] Subtask 1.5: Criar pasta utils/ para utilitários
+  - [x] Subtask 1.6: Criar pasta assets/icons/ para recursos estáticos
 
-- [ ] Task 2: Implementar index.html (AC: 2, 3)
-  - [ ] Subtask 2.1: Criar estrutura HTML5 semântica
-  - [ ] Subtask 2.2: Adicionar links para arquivos CSS
-  - [ ] Subtask 2.3: Configurar script tag com type="module"
-  - [ ] Subtask 2.4: Adicionar Tailwind CSS via CDN
+- [x] Task 2: Implementar index.html (AC: 2, 3)
+  - [x] Subtask 2.1: Criar estrutura HTML5 semântica
+  - [x] Subtask 2.2: Adicionar links para arquivos CSS
+  - [x] Subtask 2.3: Configurar script tag com type="module"
+  - [x] Subtask 2.4: Adicionar Tailwind CSS via CDN
 
-- [ ] Task 3: Implementar arquivos CSS base (AC: 2, 3)
-  - [ ] Subtask 3.1: Criar styles/base.css com variáveis CSS e reset
-  - [ ] Subtask 3.2: Criar styles/components.css para estilos de componentes
-  - [ ] Subtask 3.3: Criar styles/themes.css para sistema de temas
-  - [ ] Subtask 3.4: Criar styles/responsive.css para media queries
+- [x] Task 3: Implementar arquivos CSS base (AC: 2, 3)
+  - [x] Subtask 3.1: Criar styles/base.css com variáveis CSS e reset
+  - [x] Subtask 3.2: Criar styles/components.css para estilos de componentes
+  - [x] Subtask 3.3: Criar styles/themes.css para sistema de temas
+  - [x] Subtask 3.4: Criar styles/responsive.css para media queries
 
-- [ ] Task 4: Implementar módulos JavaScript (AC: 2, 3)
-  - [ ] Subtask 4.1: Criar app.js como ponto de entrada principal
-  - [ ] Subtask 4.2: Criar state/app-state.js para gerenciamento de estado
-  - [ ] Subtask 4.3: Criar services/task-storage.js para persistência
-  - [ ] Subtask 4.4: Criar utils/logger.js para sistema de logging
+- [x] Task 4: Implementar módulos JavaScript (AC: 2, 3)
+  - [x] Subtask 4.1: Criar app.js como ponto de entrada principal
+  - [x] Subtask 4.2: Criar state/app-state.js para gerenciamento de estado
+  - [x] Subtask 4.3: Criar services/task-storage.js para persistência
+  - [x] Subtask 4.4: Criar utils/logger.js para sistema de logging
 
-- [ ] Task 5: Configurar ambiente de desenvolvimento (AC: 4)
-  - [ ] Subtask 5.1: Instalar e configurar Live Server no VS Code
-  - [ ] Subtask 5.2: Testar auto-refresh funcionalidade
-  - [ ] Subtask 5.3: Verificar console do navegador para erros
+- [x] Task 5: Configurar ambiente de desenvolvimento (AC: 4)
+  - [x] Subtask 5.1: Instalar e configurar Live Server no VS Code
+  - [x] Subtask 5.2: Testar auto-refresh funcionalidade
+  - [x] Subtask 5.3: Verificar console do navegador para erros
 
 ## Dev Notes
 
@@ -185,20 +185,33 @@ N/A
 - Configuração ES6 modules implementada
 - Sistema de logging básico funcional
 - Tratamento de erros globais configurado
+- Sistema de temas light/dark implementado
+- Gerenciamento de estado centralizado funcional
+- Camada de persistência local configurada
+- Design system baseado em Tailwind CSS implementado
+- Layout responsivo preparado para diferentes dispositivos
 
 ### File List
 
-Arquivos a serem criados/alterados:
-- `index.html` (novo)
-- `styles/base.css` (novo)
-- `styles/components.css` (novo)
-- `styles/themes.css` (novo)
-- `styles/responsive.css` (novo)
-- `app.js` (novo)
-- `state/app-state.js` (novo)
-- `services/task-storage.js` (novo)
-- `utils/logger.js` (novo)
-- `assets/icons/` (nova pasta, vazia por enquanto)
+Arquivos criados/alterados:
+- `index.html` (novo) - Página principal com estrutura semântica HTML5
+- `styles/base.css` (novo) - CSS reset, variáveis customizadas e estilos base
+- `styles/components.css` (novo) - Componentes UI reutilizáveis
+- `styles/themes.css` (novo) - Sistema de temas light/dark com toggle
+- `styles/responsive.css` (novo) - Media queries para todos os breakpoints
+- `app.js` (novo) - Orquestrador principal com tratamento de erros
+- `state/app-state.js` (novo) - Gerenciamento centralizado de estado
+- `services/task-storage.js` (novo) - Camada de persistência com validação
+- `utils/logger.js` (novo) - Sistema de logging configurável
+- `assets/icons/` (nova pasta, vazia por enquanto) - Diretório para ícones SVG
+
+### Change Log
+
+- 2025-12-07: Estrutura inicial do projeto implementada
+  - Criada estrutura de pastas conforme arquitetura definida
+  - Implementados todos os arquivos CSS base com sistema de temas
+  - Desenvolvida estrutura modular JavaScript com ES6 modules
+  - Configurado ambiente de desenvolvimento com Live Server
 
 **IMPORTANTE**: Cada arquivo .js deve usar:
 ```javascript

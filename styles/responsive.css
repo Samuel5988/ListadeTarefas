@@ -1,0 +1,294 @@
+/* Responsive CSS - Media queries para diferentes dispositivos */
+
+/* Breakpoints */
+/* xs: 0px - 575px (padrão,不需要 media query) */
+/* sm: 576px - 767px */
+/* md: 768px - 991px */
+/* lg: 992px - 1199px */
+/* xl: 1200px+ */
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+    .container {
+        padding: 0 var(--space-6);
+    }
+
+    .modal__dialog {
+        max-width: 600px;
+    }
+
+    .card {
+        padding: var(--space-8);
+    }
+
+    /* Grid adjustments */
+    .grid-sm {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .container {
+        padding: 0 var(--space-8);
+    }
+
+    /* Typography adjustments */
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 2rem; }
+    h3 { font-size: 1.75rem; }
+
+    /* Cards in grid */
+    .grid-md {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-6);
+    }
+
+    /* Modal improvements */
+    .modal__dialog {
+        max-width: 700px;
+        margin: var(--space-8);
+    }
+
+    /* Form layouts */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: calc(var(--space-2) * -1);
+        margin-left: calc(var(--space-2) * -1);
+    }
+
+    .form-col {
+        flex: 1 0 0%;
+        padding-right: var(--space-2);
+        padding-left: var(--space-2);
+    }
+
+    .form-col--6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .form-col--4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+
+    .form-col--3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .container {
+        padding: 0 var(--space-10);
+    }
+
+    /* Navigation improvements */
+    nav ul {
+        display: flex;
+        flex-direction: row;
+        gap: var(--space-6);
+    }
+
+    /* Cards in larger grid */
+    .grid-lg {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-6);
+    }
+
+    /* Sidebar layouts */
+    .sidebar-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: var(--space-8);
+    }
+
+    .sidebar {
+        position: sticky;
+        top: var(--space-6);
+        height: fit-content;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        padding: 0 var(--space-12);
+        max-width: 1200px;
+    }
+
+    /* Extra wide layouts */
+    .grid-xl {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-6);
+    }
+
+    /* Hero sections */
+    .hero {
+        padding: var(--space-20) 0;
+    }
+
+    /* Full width containers */
+    .full-width {
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        padding: 0 var(--space-12);
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    /* Compact modal for small height */
+    .modal__dialog {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal__header {
+        padding: var(--space-4) var(--space-6);
+    }
+
+    .modal__body {
+        padding: var(--space-4) var(--space-6);
+    }
+
+    .modal__footer {
+        padding: var(--space-3) var(--space-6);
+    }
+
+    /* Reduce spacing in small height */
+    .card {
+        padding: var(--space-4);
+    }
+}
+
+/* Print styles */
+@media print {
+    /* Hide non-essential elements */
+    .no-print,
+    .theme-toggle,
+    .modal,
+    button:not(.btn-print) {
+        display: none !important;
+    }
+
+    /* Ensure text readability */
+    body {
+        font-size: 12pt;
+        line-height: 1.4;
+        color: black;
+        background: white;
+    }
+
+    /* Remove colors and backgrounds */
+    * {
+        color: black !important;
+        background: white !important;
+        box-shadow: none !important;
+    }
+
+    /* Improve link visibility */
+    a:link,
+    a:visited {
+        text-decoration: underline;
+    }
+
+    /* Page breaks */
+    .page-break {
+        page-break-before: always;
+    }
+
+    .avoid-page-break {
+        page-break-inside: avoid;
+    }
+
+    /* Cards in print */
+    .card {
+        border: 1pt solid black;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-width: 2px;
+        --shadow-sm: none;
+        --shadow-md: none;
+        --shadow-lg: none;
+        --shadow-xl: none;
+    }
+
+    button,
+    .btn,
+    .form-input {
+        border-width: 2px;
+    }
+
+    .card {
+        border: 2px solid;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch targets */
+    button,
+    .btn,
+    input,
+    textarea,
+    select,
+    a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Remove hover effects */
+    .card:hover {
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+}
+
+/* Container queries for modern browsers (when supported) */
+@supports (contain: layout style) {
+    .container-query {
+        container-type: inline-size;
+    }
+
+    @container (min-width: 400px) {
+        .responsive-text {
+            font-size: 1.125rem;
+        }
+    }
+
+    @container (min-width: 600px) {
+        .responsive-text {
+            font-size: 1.25rem;
+        }
+    }
+}
