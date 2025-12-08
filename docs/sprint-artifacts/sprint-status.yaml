@@ -38,7 +38,7 @@ story_location: "{project-root}/docs/sprint-artifacts"
 development_status:
   # Epic 1: Fundação da Aplicação
   epic-1: in-progress
-  1-1-estrutura-do-projeto-e-configuracao-inicial: review
+  1-1-estrutura-do-projeto-e-configuracao-inicial: done
   1-2-sistema-de-estado-centralizado: backlog
   1-3-sistema-de-persistencia-local: backlog
   1-4-sistema-de-temas-light-dark: backlog
