@@ -8,6 +8,7 @@
 import { logger } from './utils/logger.js';
 import { appState, STATE_EVENTS } from './state/app-state.js';
 import { taskStorage } from './services/task-storage.js';
+import { ThemeManager } from './components/theme-manager.js';
 
 /**
  * Classe principal da aplicação
@@ -17,6 +18,7 @@ class TaskApp {
         this.initialized = false;
         this.components = new Map();
         this.eventListeners = new Map();
+        this.themeManager = null;
 
         // Bind métodos
         this.handleDOMLoaded = this.handleDOMLoaded.bind(this);
@@ -147,8 +149,8 @@ class TaskApp {
         const theme = appState.getState('ui.theme');
         document.documentElement.setAttribute('data-theme', theme);
 
-        // Adicionar botão de tema (será movido para componente específico depois)
-        this.addThemeToggle();
+        // Inicializar ThemeManager
+        this.initializeThemeManager();
 
         // Esconder mensagem de carregamento se existir
         const loadingEl = document.querySelector('.loading-message');
@@ -158,33 +160,29 @@ class TaskApp {
     }
 
     /**
-     * Adiciona botão de toggle de tema
+     * Inicializa o ThemeManager
      */
-    addThemeToggle() {
-        const header = document.querySelector('header .max-w-7xl');
-        if (!header) return;
+    initializeThemeManager() {
+        try {
+            logger.info('Initializing ThemeManager...');
 
-        const toggleContainer = document.createElement('div');
-        toggleContainer.className = 'flex items-center';
-        toggleContainer.innerHTML = `
-            <label class="theme-toggle">
-                <input type="checkbox" id="theme-toggle-input">
-                <span class="theme-slider"></span>
-            </label>
-            <span class="ml-2 text-sm text-gray-600">Tema</span>
-        `;
+            // Criar instância do ThemeManager
+            this.themeManager = new ThemeManager(appState);
 
-        header.appendChild(toggleContainer);
+            // Adicionar botão ao container no header
+            const toggleContainer = document.getElementById('theme-toggle-container');
+            if (toggleContainer && this.themeManager.getToggleElement()) {
+                toggleContainer.appendChild(this.themeManager.getToggleElement());
+                logger.info('Theme toggle button added to header');
+            }
 
-        const toggleInput = document.getElementById('theme-toggle-input');
-        const currentTheme = appState.getState('ui.theme');
-        toggleInput.checked = currentTheme === 'dark';
+            // Armazenar referência
+            this.components.set('themeManager', this.themeManager);
 
-        // Adicionar listener
-        toggleInput.addEventListener('change', (e) => {
-            const newTheme = e.target.checked ? 'dark' : 'light';
-            appState.updateUI({ theme: newTheme });
-        });
+            logger.info('ThemeManager initialized successfully');
+        } catch (error) {
+            logger.error('Failed to initialize ThemeManager', error);
+        }
     }
 
     /**
@@ -250,12 +248,6 @@ class TaskApp {
     handleThemeChange(event) {
         const theme = event.detail;
         document.documentElement.setAttribute('data-theme', theme);
-
-        // Atualizar toggle
-        const toggleInput = document.getElementById('theme-toggle-input');
-        if (toggleInput) {
-            toggleInput.checked = theme === 'dark';
-        }
 
         logger.info('Theme changed', { theme });
     }
@@ -424,6 +416,12 @@ class TaskApp {
      */
     destroy() {
         logger.info('Destroying application...');
+
+        // Destruir ThemeManager se existir
+        if (this.themeManager) {
+            this.themeManager.destroy();
+            this.themeManager = null;
+        }
 
         // Remover event listeners
         window.removeEventListener('error', this.handleError);

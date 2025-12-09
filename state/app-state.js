@@ -618,8 +618,11 @@ class AppState {
     setupPersistenceListener() {
         // Listener geral para mudanças de estado
         this.subscribe('persistence-listener', (newState, changes) => {
+            // Verificar se changes é um array (de setState) ou objeto (de update)
+            const changesArray = Array.isArray(changes) ? changes : [];
+
             // Filtrar mudanças relevantes para persistência
-            const relevantChanges = changes.filter(c =>
+            const relevantChanges = changesArray.filter(c =>
                 c.path.includes('tasks') ||
                 c.path.includes('categories') ||
                 c.path.includes('preferences') ||

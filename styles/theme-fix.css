@@ -1,0 +1,54 @@
+/* Fix temporário para garantir que o tema seja aplicado */
+
+/* Garantir que o header use variáveis do tema */
+header {
+    background-color: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+header h1 {
+    color: var(--text-primary) !important;
+}
+
+/* Garantir que o footer use variáveis do tema */
+footer {
+    background-color: var(--bg-secondary) !important;
+    border-top-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Garantir que o main use variáveis do tema */
+main {
+    background-color: var(--bg-primary) !important;
+}
+
+/* Garantir que os cards usem variáveis do tema */
+.card {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.card h2 {
+    color: var(--text-primary) !important;
+}
+
+.card p {
+    color: var(--text-secondary) !important;
+}
+
+/* Garantir que o botão de tema seja visível */
+.theme-toggle {
+    display: inline-block !important;
+    position: relative !important;
+    cursor: pointer !important;
+}
+
+/* Garantir transição suave para o slider */
+.theme-slider {
+    transition: background-color 0.3s ease !important;
+}
+
+.theme-slider:before {
+    transition: transform 0.3s ease !important;
+}
