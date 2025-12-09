@@ -40,7 +40,8 @@ development_status:
   epic-1: in-progress
   1-1-estrutura-do-projeto-e-configuracao-inicial: done
   1-2-sistema-de-estado-centralizado: done
-  1-3-sistema-de-persistencia-local: backlog
+  1-3-integracao-com-persistencia-existente: done
+  1-3-sistema-de-persistencia-local: replaced
   1-4-sistema-de-temas-light-dark: backlog
   epic-1-retrospective: optional
 

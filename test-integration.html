@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Integração TaskStorage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .task-item {
+            padding: 5px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste Integração TaskStorage ↔ StateManager</h1>
+
+    <div class="section">
+        <h2>1. Adicionar Tarefa</h2>
+        <input type="text" id="taskTitle" placeholder="Título da tarefa">
+        <button onclick="addTask()">Adicionar Tarefa</button>
+    </div>
+
+    <div class="section">
+        <h2>2. Lista de Tarefas</h2>
+        <div id="taskList"></div>
+        <button onclick="loadTasks()">Recarregar do Storage</button>
+    </div>
+
+    <div class="section">
+        <h2>3. Preferências</h2>
+        <button onclick="toggleTheme()">Alternar Tema</button>
+        <button onclick="toggleAutoSave()">Alternar AutoSave</button>
+        <div id="preferences"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Log de Eventos</h2>
+        <button onclick="clearLog()">Limpar Log</button>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // Importar o app-state
+        import appState from '../state/app-state.js';
+
+        // Funções globais para o HTML
+        window.addTask = addTask;
+        window.loadTasks = loadTasks;
+        window.toggleTheme = toggleTheme;
+        window.toggleAutoSave = toggleAutoSave;
+        window.clearLog = clearLog;
+
+        // Estado local
+        let currentTasks = [];
+        let currentPreferences = {};
+
+        // Adicionar listener para mudanças
+        appState.subscribe('test-page', (newState, changes) => {
+            log('Estado atualizado', { changes, tasksCount: newState.tasks.length });
+            updateTaskList();
+            updatePreferences();
+        });
+
+        // Adicionar listeners para eventos específicos
+        if (typeof window !== 'undefined') {
+            const { STATE_EVENTS } = await import('../state/app-state.js');
+
+            window.addEventListener(STATE_EVENTS.TASK_CREATED, (e) => {
+                log('TASK_CREATED', e.detail);
+            });
+
+            window.addEventListener(STATE_EVENTS.THEME_CHANGED, (e) => {
+                log('THEME_CHANGED', e.detail);
+            });
+
+            window.addEventListener(STATE_EVENTS.TASKS_LOADED, (e) => {
+                log('TASKS_LOADED', { count: e.detail?.length || 0 });
+            });
+        }
+
+        async function addTask() {
+            const titleInput = document.getElementById('taskTitle');
+            const title = titleInput.value.trim();
+
+            if (!title) {
+                log('ERRO: Título não pode ser vazio');
+                return;
+            }
+
+            try {
+                const task = await appState.addTask({ title });
+                log('Tarefa adicionada', task);
+                titleInput.value = '';
+            } catch (error) {
+                log('ERRO ao adicionar tarefa', error);
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                await appState.loadTasksFromStorage();
+                log('Tarefas recarregadas do storage');
+            } catch (error) {
+                log('ERRO ao recarregar tarefas', error);
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = appState.getState('ui.theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            appState.updateUI({ theme: newTheme });
+            log('Tema alterado', { from: currentTheme, to: newTheme });
+        }
+
+        function toggleAutoSave() {
+            const currentAutoSave = appState.getState('settings.autoSave');
+            const newAutoSave = !currentAutoSave;
+            appState.updateSettings({ autoSave: newAutoSave });
+            log('AutoSave alterado', { from: currentAutoSave, to: newAutoSave });
+        }
+
+        function updateTaskList() {
+            const tasks = appState.getState('tasks');
+            const taskList = document.getElementById('taskList');
+
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<p>Nenhuma tarefa encontrada</p>';
+                return;
+            }
+
+            taskList.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <strong>${task.title}</strong>
+                    <br><small>ID: ${task.id} | Criada: ${new Date(task.createdAt).toLocaleString()}</small>
+                    <br><small>Categoria: ${task.category} | Prioridade: ${task.priority}</small>
+                </div>
+            `).join('');
+        }
+
+        function updatePreferences() {
+            const preferences = appState.getPreferencesFromState();
+            const preferencesDiv = document.getElementById('preferences');
+
+            preferencesDiv.innerHTML = `
+                <p><strong>Tema:</strong> ${preferences.theme}</p>
+                <p><strong>AutoSave:</strong> ${preferences.autoSave ? 'Sim' : 'Não'}</p>
+                <p><strong>Mostrar Concluídas:</strong> ${preferences.showCompleted ? 'Sim' : 'Não'}</p>
+            `;
+        }
+
+        function log(message, data = null) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}${data ? ' ' + JSON.stringify(data) : ''}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Inicialização
+        async function init() {
+            log('Iniciando teste de integração...');
+
+            // Garantir que o appState foi inicializado
+            if (!appState.initialized) {
+                await appState.initialize();
+            }
+
+            // Carregar estado inicial
+            updateTaskList();
+            updatePreferences();
+
+            log('Teste inicializado com sucesso');
+            log('Storage info:', await appState.taskStorage.getInfo());
+        }
+
+        // Iniciar quando a página carregar
+        init();
+    </script>
+</body>
+</html>

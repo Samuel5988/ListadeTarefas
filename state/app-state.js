@@ -5,6 +5,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { taskStorage } from '../services/task-storage.js';
 
 // Eventos customizados para mudanças de estado
 export const STATE_EVENTS = {
@@ -56,6 +57,9 @@ class AppState {
         this.maxHistorySize = 50;
         this.initialized = false;
 
+        // Referência ao TaskStorage existente
+        this.taskStorage = taskStorage;
+
         this.initialize();
     }
 
@@ -66,8 +70,14 @@ class AppState {
         try {
             logger.info('Initializing App State');
 
+            // Carregar tarefas do TaskStorage existente
+            await this.loadTasksFromStorage();
+
             // Carregar estado do storage se disponível
             await this.loadFromStorage();
+
+            // Configurar listener para persistência automática
+            this.setupPersistenceListener();
 
             // Aplicar tema salvo
             this.applyTheme(this.state.ui.theme);
@@ -79,6 +89,7 @@ class AppState {
             logger.info('App State initialized successfully');
 
             // Disparar evento de estado carregado
+            this.dispatch(STATE_EVENTS.TASKS_LOADED, this.state.tasks);
             this.dispatch(STATE_EVENTS.STATE_LOADED, this.state);
         } catch (error) {
             logger.error('Failed to initialize App State', error);
@@ -229,7 +240,7 @@ class AppState {
      * Adiciona uma nova tarefa
      * @param {Object} task - Nova tarefa
      */
-    addTask(task) {
+    async addTask(task) {
         const newTask = {
             id: this.generateId(),
             title: task.title,
@@ -243,8 +254,22 @@ class AppState {
             ...task,
         };
 
+        // Adicionar ao TaskStorage
+        try {
+            const savedTask = await this.taskStorage.add(newTask);
+            if (savedTask) {
+                // Atualizar estado com a tarefa salva
+                this.updateTasks(tasks => [...tasks, savedTask]);
+                logger.info('Task created and persisted', { taskId: savedTask.id });
+                return savedTask;
+            }
+        } catch (error) {
+            logger.error('Failed to persist new task', error);
+        }
+
+        // Fallback: adicionar apenas ao estado
         this.updateTasks(tasks => [...tasks, newTask]);
-        logger.info('Task created', { taskId: newTask.id });
+        logger.info('Task created (state only)', { taskId: newTask.id });
 
         return newTask;
     }
@@ -254,7 +279,33 @@ class AppState {
      * @param {string} taskId - ID da tarefa
      * @param {Object} updates - Atualizações
      */
-    updateTask(taskId, updates) {
+    async updateTask(taskId, updates) {
+        // Atualizar no TaskStorage primeiro
+        try {
+            const updatedTask = await this.taskStorage.update(taskId, {
+                ...updates,
+                updatedAt: new Date().toISOString()
+            });
+
+            if (updatedTask) {
+                // Atualizar estado com a tarefa atualizada
+                this.updateTasks(tasks =>
+                    tasks.map(task =>
+                        task.id === taskId ? updatedTask : task
+                    )
+                );
+                logger.info('Task updated and persisted', { taskId, updates });
+
+                if (updates.completed) {
+                    this.dispatch(STATE_EVENTS.TASK_COMPLETED);
+                }
+                return;
+            }
+        } catch (error) {
+            logger.error('Failed to persist task update', error);
+        }
+
+        // Fallback: atualizar apenas no estado
         this.updateTasks(tasks =>
             tasks.map(task =>
                 task.id === taskId
@@ -267,7 +318,7 @@ class AppState {
             )
         );
 
-        logger.info('Task updated', { taskId, updates });
+        logger.info('Task updated (state only)', { taskId, updates });
 
         if (updates.completed) {
             this.dispatch(STATE_EVENTS.TASK_COMPLETED);
@@ -278,9 +329,23 @@ class AppState {
      * Remove uma tarefa
      * @param {string} taskId - ID da tarefa
      */
-    removeTask(taskId) {
+    async removeTask(taskId) {
+        // Remover do TaskStorage primeiro
+        try {
+            const removed = await this.taskStorage.remove(taskId);
+            if (removed) {
+                // Atualizar estado removendo a tarefa
+                this.updateTasks(tasks => tasks.filter(task => task.id !== taskId));
+                logger.info('Task deleted and persisted', { taskId });
+                return;
+            }
+        } catch (error) {
+            logger.error('Failed to persist task removal', error);
+        }
+
+        // Fallback: remover apenas do estado
         this.updateTasks(tasks => tasks.filter(task => task.id !== taskId));
-        logger.info('Task deleted', { taskId });
+        logger.info('Task deleted (state only)', { taskId });
     }
 
     /**
@@ -309,7 +374,44 @@ class AppState {
         if (ui.theme && ui.theme !== currentUI.theme) {
             this.applyTheme(ui.theme);
             this.dispatch(STATE_EVENTS.THEME_CHANGED, ui.theme);
+
+            // Salvar preferências de tema no localStorage
+            this.saveThemePreference(ui.theme);
         }
+    }
+
+    /**
+     * Salva preferências no localStorage
+     * @param {Object} preferences - Preferências a serem salvas
+     */
+    savePreferences(preferences = {}) {
+        try {
+            if (typeof localStorage !== 'undefined') {
+                // Obter preferências existentes
+                const existing = localStorage.getItem('listaDeTarefas_preferences');
+                const parsed = existing ? JSON.parse(existing) : {};
+
+                // Mesclar com novas preferências
+                const updatedPreferences = {
+                    ...parsed,
+                    ...preferences,
+                    savedAt: new Date().toISOString()
+                };
+
+                localStorage.setItem('listaDeTarefas_preferences', JSON.stringify(updatedPreferences));
+                logger.debug('Preferences saved', updatedPreferences);
+            }
+        } catch (error) {
+            logger.error('Failed to save preferences', error);
+        }
+    }
+
+    /**
+     * Salva preferência de tema
+     * @param {string} theme - Tema a ser salvo
+     */
+    saveThemePreference(theme) {
+        this.savePreferences({ theme });
     }
 
     /**
@@ -321,6 +423,19 @@ class AppState {
         const newSettings = { ...currentSettings, ...settings };
 
         this.update({ settings: newSettings });
+
+        // Salvar preferências relevantes
+        const preferencesToSave = {};
+        if ('autoSave' in settings) {
+            preferencesToSave.autoSave = settings.autoSave;
+        }
+        if ('showCompleted' in settings) {
+            preferencesToSave.showCompleted = settings.showCompleted;
+        }
+
+        if (Object.keys(preferencesToSave).length > 0) {
+            this.savePreferences(preferencesToSave);
+        }
     }
 
     /**
@@ -392,6 +507,197 @@ class AppState {
             }
         });
     }
+
+    /**
+     * Carrega tarefas do TaskStorage existente
+     */
+    async loadTasksFromStorage() {
+        try {
+            const tasks = await this.taskStorage.getAll();
+            if (tasks && tasks.length > 0) {
+                // Validar dados recebidos do storage
+                const validTasks = this.validateTasksFromStorage(tasks);
+
+                if (validTasks.length > 0) {
+                    // Mapear tarefas do formato do storage para o formato do estado
+                    const mappedTasks = validTasks.map(task => ({
+                        id: task.id,
+                        title: task.title,
+                        description: task.description || '',
+                        completed: Boolean(task.completed),
+                        createdAt: task.createdAt || new Date().toISOString(),
+                        updatedAt: task.updatedAt || task.createdAt || new Date().toISOString(),
+                        category: task.category || 'default',
+                        priority: ['low', 'medium', 'high'].includes(task.priority) ? task.priority : 'medium',
+                        dueDate: task.dueDate || null,
+                    }));
+
+                    this.state.tasks = mappedTasks;
+                    logger.info('Tasks loaded and validated from TaskStorage', {
+                        count: mappedTasks.length,
+                        originalCount: tasks.length,
+                        invalidCount: tasks.length - validTasks.length
+                    });
+                }
+            } else {
+                logger.info('No tasks found in TaskStorage');
+            }
+        } catch (error) {
+            logger.error('Failed to load tasks from TaskStorage', error);
+            // Fallback: continuar com estado padrão
+            this.state.tasks = [];
+        }
+    }
+
+    /**
+     * Valida tarefas vindas do storage
+     * @param {Array} tasks - Tarefas para validar
+     * @returns {Array} Tarefas válidas
+     */
+    validateTasksFromStorage(tasks) {
+        if (!Array.isArray(tasks)) {
+            logger.warn('Invalid tasks data from storage: not an array');
+            return [];
+        }
+
+        return tasks.filter(task => {
+            // Validar objeto da tarefa
+            if (!task || typeof task !== 'object') {
+                logger.warn('Invalid task: not an object', task);
+                return false;
+            }
+
+            // Validar ID obrigatório
+            if (!task.id || typeof task.id !== 'string') {
+                logger.warn('Invalid task: missing or invalid ID', task);
+                return false;
+            }
+
+            // Validar título obrigatório
+            if (!task.title || typeof task.title !== 'string' || task.title.trim().length === 0) {
+                logger.warn('Invalid task: missing or invalid title', task);
+                return false;
+            }
+
+            // Validar datas
+            if (task.createdAt && !this.isValidISOString(task.createdAt)) {
+                logger.warn('Invalid task: invalid createdAt date', task);
+                return false;
+            }
+
+            if (task.updatedAt && !this.isValidISOString(task.updatedAt)) {
+                logger.warn('Invalid task: invalid updatedAt date', task);
+                return false;
+            }
+
+            // Validar prioridade
+            if (task.priority && !['low', 'medium', 'high'].includes(task.priority)) {
+                logger.warn('Invalid task: invalid priority', task);
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Verifica se string é uma data ISO válida
+     * @param {string} dateString - String da data
+     * @returns {boolean}
+     */
+    isValidISOString(dateString) {
+        if (typeof dateString !== 'string') return false;
+
+        const date = new Date(dateString);
+        return !isNaN(date.getTime()) && dateString === date.toISOString();
+    }
+
+    /**
+     * Configura listener para persistência automática
+     */
+    setupPersistenceListener() {
+        // Listener geral para mudanças de estado
+        this.subscribe('persistence-listener', (newState, changes) => {
+            // Filtrar mudanças relevantes para persistência
+            const relevantChanges = changes.filter(c =>
+                c.path.includes('tasks') ||
+                c.path.includes('categories') ||
+                c.path.includes('preferences') ||
+                c.path.includes('settings')
+            );
+
+            if (relevantChanges.length > 0) {
+                this.debouncedSave(newState);
+            }
+        });
+
+        // Listeners específicos para eventos de tarefas
+        if (typeof window !== 'undefined') {
+            // Task created - já é tratado pelo método addTask
+            window.addEventListener(STATE_EVENTS.TASK_CREATED, () => {
+                logger.debug('Task created event detected');
+            });
+
+            // Task updated - já é tratado pelo método updateTask
+            window.addEventListener(STATE_EVENTS.TASK_UPDATED, () => {
+                logger.debug('Task updated event detected');
+            });
+
+            // Task deleted - já é tratado pelo método removeTask
+            window.addEventListener(STATE_EVENTS.TASK_DELETED, () => {
+                logger.debug('Task deleted event detected');
+            });
+
+            // Task completed - já é tratado pelo método updateTask
+            window.addEventListener(STATE_EVENTS.TASK_COMPLETED, () => {
+                logger.debug('Task completed event detected');
+            });
+
+            // Tasks loaded - não precisa persistir (já veio do storage)
+            window.addEventListener(STATE_EVENTS.TASKS_LOADED, (e) => {
+                logger.debug('Tasks loaded event detected', { count: e.detail?.length || 0 });
+            });
+
+            // Theme changed - persistir preferência
+            window.addEventListener(STATE_EVENTS.THEME_CHANGED, (e) => {
+                logger.debug('Theme changed event detected', { theme: e.detail });
+                // A persistência do tema é feita pelo método saveThemePreference
+            });
+
+            // Filter changed - não precisa persistir no TaskStorage
+            window.addEventListener(STATE_EVENTS.FILTER_CHANGED, () => {
+                logger.debug('Filter changed event detected');
+            });
+
+            logger.info('State events listeners configured for persistence');
+        }
+    }
+
+    /**
+     * Debounce para operações de save
+     */
+    debounce(func, delay) {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    /**
+     * Debounced save para TaskStorage
+     */
+    debouncedSave = this.debounce(async (state) => {
+        try {
+            // Apenas salvar tarefas no TaskStorage
+            if (state.tasks && state.tasks.length > 0) {
+                await this.taskStorage.saveAll(state.tasks);
+                logger.debug('Tasks persisted to TaskStorage', { taskCount: state.tasks.length });
+            }
+        } catch (error) {
+            logger.error('Failed to persist tasks to TaskStorage', error);
+        }
+    }, 500);
 
     /**
      * Dispara evento customizado
@@ -604,15 +910,37 @@ class AppState {
         try {
             if (typeof localStorage === 'undefined') return;
 
+            // Carregar estado geral
             const stored = localStorage.getItem('appState');
-            if (!stored) return;
+            if (stored) {
+                const parsedState = JSON.parse(stored);
+                // Mesclar com estado inicial para garantir todas as propriedades
+                this.state = this.mergeState(initialState, parsedState);
+                logger.info('State loaded from storage', { lastSaved: parsedState.lastSaved });
+            }
 
-            const parsedState = JSON.parse(stored);
+            // Carregar preferências
+            const preferences = localStorage.getItem('listaDeTarefas_preferences');
+            if (preferences) {
+                const parsedPreferences = JSON.parse(preferences);
 
-            // Mesclar com estado inicial para garantir todas as propriedades
-            this.state = this.mergeState(initialState, parsedState);
+                // Mapear preferências para o estado
+                if (parsedPreferences.theme) {
+                    this.state.ui.theme = parsedPreferences.theme;
+                    this.state.preferences.theme = parsedPreferences.theme;
+                }
 
-            logger.info('State loaded from storage', { lastSaved: parsedState.lastSaved });
+                if ('autoSave' in parsedPreferences) {
+                    this.state.settings.autoSave = parsedPreferences.autoSave;
+                    this.state.preferences.autoSave = parsedPreferences.autoSave;
+                }
+
+                if ('showCompleted' in parsedPreferences) {
+                    this.state.preferences.showCompleted = parsedPreferences.showCompleted;
+                }
+
+                logger.info('Preferences loaded', parsedPreferences);
+            }
         } catch (error) {
             logger.error('Failed to load state from storage', error);
         }
@@ -853,6 +1181,9 @@ class AppState {
         }
 
         const changes = this.setState({ preferences });
+
+        // Persistir preferências no localStorage
+        this.savePreferences(preferences);
 
         // Atualiza estruturas relacionadas para compatibilidade
         const relatedUpdates = {};
