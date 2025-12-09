@@ -39,7 +39,7 @@ development_status:
   # Epic 1: Fundação da Aplicação
   epic-1: in-progress
   1-1-estrutura-do-projeto-e-configuracao-inicial: done
-  1-2-sistema-de-estado-centralizado: backlog
+  1-2-sistema-de-estado-centralizado: done
   1-3-sistema-de-persistencia-local: backlog
   1-4-sistema-de-temas-light-dark: backlog
   epic-1-retrospective: optional
