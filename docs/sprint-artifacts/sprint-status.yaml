@@ -43,7 +43,7 @@ development_status:
   1-3-integracao-com-persistencia-existente: done
   1-3-sistema-de-persistencia-local: replaced
   1-4-sistema-de-temas-light-dark: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: completed
 
   # Epic 2: Gerenciamento de Tarefas
   epic-2: backlog
