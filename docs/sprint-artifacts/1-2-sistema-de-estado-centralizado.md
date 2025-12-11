@@ -72,7 +72,7 @@ A Story 1.1 (Estrutura do Projeto e Configuração Inicial) está completa com:
   - [x] Subtask 4.1: Implementar shallow compare para detectar mudanças reais
   - [x] Subtask 4.2: Adicionar modo debug para logging detalhado
   - [x] Subtask 4.3: Implementar middleware opcional para logs
-  - [x] Subtask 4.4: Criar método reset() para testes
+  - [x] Subtask 4.4: Criar método reset() para debug e desenvolvimento
 
 ## Dev Notes
 
@@ -169,10 +169,10 @@ const unsubscribe = stateManager.subscribe(
 
 ### Testing Considerations
 
-- Mock state para testes unitários
-- Reset estado entre testes
-- Spy eventos para verificar notificações
-- Testar performance com volumes de dados
+- Mock state para desenvolvimento manual
+- Reset estado para debug
+- Spy eventos para depuração
+- Validar performance com volumes de dados
 
 ### Project Structure Notes
 
@@ -216,7 +216,7 @@ N/A - Story ainda não iniciada
 - Shallow compare para otimização de performance
 - Modo debug via localStorage.debug ativado
 - Middleware opcional para logs implementado
-- Método reset() para testes adicionado
+- Método reset() para debug adicionado
 
 ### File List
 

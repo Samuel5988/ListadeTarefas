@@ -9,6 +9,8 @@ import { logger } from './utils/logger.js';
 import { appState, STATE_EVENTS } from './state/app-state.js';
 import { taskStorage } from './services/task-storage.js';
 import { ThemeManager } from './components/theme-manager.js';
+import { TaskCard } from './components/task-card.js';
+import { taskForm } from './components/task-form.js';
 
 /**
  * Classe principal da aplicação
@@ -134,6 +136,13 @@ class TaskApp {
             }
         } catch (error) {
             logger.error('Failed to load tasks', error);
+
+            // Exibir notificação de erro para o usuário
+            this.showNotification(
+                'Não foi possível carregar suas tarefas. Verifique a conexão e tente novamente.',
+                'error'
+            );
+
             // Continuar com estado vazio
         }
     }
@@ -151,6 +160,12 @@ class TaskApp {
 
         // Inicializar ThemeManager
         this.initializeThemeManager();
+
+        // Inicializar TaskForm
+        this.initializeTaskForm();
+
+        // Renderizar tarefas existentes
+        this.renderTasks();
 
         // Esconder mensagem de carregamento se existir
         const loadingEl = document.querySelector('.loading-message');
@@ -186,6 +201,25 @@ class TaskApp {
     }
 
     /**
+     * Inicializa o TaskForm
+     */
+    initializeTaskForm() {
+        try {
+            logger.info('Initializing TaskForm...');
+
+            // Inicializar o TaskForm
+            taskForm.init();
+
+            // Armazenar referência
+            this.components.set('taskForm', taskForm);
+
+            logger.info('TaskForm initialized successfully');
+        } catch (error) {
+            logger.error('Failed to initialize TaskForm', error);
+        }
+    }
+
+    /**
      * Adiciona event listeners globais
      */
     addGlobalEventListeners() {
@@ -217,6 +251,140 @@ class TaskApp {
     }
 
     /**
+     * Renderiza a lista de tarefas
+     */
+    renderTasks() {
+        try {
+            const tasks = appState.getState('tasks');
+            const container = document.querySelector('main .grid');
+
+            // Store cleanup function references
+            if (!this.taskCardCleanup) {
+                this.taskCardCleanup = [];
+            }
+
+            // Cleanup existing event listeners
+            if (this.taskCardCleanup.length > 0) {
+                this.taskCardCleanup.forEach(cleanup => cleanup());
+                this.taskCardCleanup = [];
+            }
+
+            // Limpar conteúdo atual
+            container.innerHTML = '';
+
+            if (tasks.length === 0) {
+                // Mostrar estado vazio
+                container.innerHTML = `
+                    <div class="bg-white rounded-lg shadow p-6 md:col-span-2 lg:col-span-3">
+                        <div class="text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhuma tarefa</h3>
+                            <p class="mt-1 text-sm text-gray-500">Clique no botão + para adicionar sua primeira tarefa</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Renderizar cada tarefa
+                tasks.forEach(task => {
+                    const taskCard = new TaskCard(task);
+                    const cardElement = taskCard.render();
+
+                    // Adicionar event listeners com cleanup
+                    const toggleHandler = (e) => {
+                        this.handleTaskToggle(e.detail.taskId);
+                    };
+                    const deleteHandler = (e) => {
+                        this.handleTaskDelete(e.detail.taskId);
+                    };
+
+                    cardElement.addEventListener('task:toggle', toggleHandler);
+                    cardElement.addEventListener('task:delete', deleteHandler);
+
+                    // Store cleanup function for each listener
+                    this.taskCardCleanup.push(() => {
+                        cardElement.removeEventListener('task:toggle', toggleHandler);
+                        cardElement.removeEventListener('task:delete', deleteHandler);
+                    });
+
+                    container.appendChild(cardElement);
+                });
+            }
+
+            logger.info(`Rendered ${tasks.length} tasks`);
+        } catch (error) {
+            logger.error('Failed to render tasks', error);
+        }
+    }
+
+    /**
+     * Manipula toggle de conclusão de tarefa
+     */
+    async handleTaskToggle(taskId) {
+        try {
+            const tasks = appState.getState('tasks');
+            const task = tasks.find(t => t.id === taskId);
+
+            if (task) {
+                const updatedTask = await taskStorage.update(taskId, {
+                    completed: !task.completed,
+                    updatedAt: new Date().toISOString()
+                });
+
+                if (updatedTask) {
+                    // Atualizar estado
+                    const updatedTasks = tasks.map(t => t.id === taskId ? updatedTask : t);
+                    appState.setState({ tasks: updatedTasks });
+
+                    // Disparar evento
+                    window.dispatchEvent(new CustomEvent(
+                        updatedTask.completed ? STATE_EVENTS.TASK_COMPLETED : STATE_EVENTS.TASK_UPDATED,
+                        { detail: { task: updatedTask } }
+                    ));
+
+                    // Re-renderizar
+                    this.renderTasks();
+                }
+            }
+        } catch (error) {
+            logger.error('Failed to toggle task', error);
+            this.showError('Erro ao atualizar tarefa');
+        }
+    }
+
+    /**
+     * Manipula exclusão de tarefa
+     */
+    async handleTaskDelete(taskId) {
+        try {
+            const confirmed = confirm('Tem certeza que deseja excluir esta tarefa?');
+
+            if (confirmed) {
+                const success = await taskStorage.remove(taskId);
+
+                if (success) {
+                    // Atualizar estado
+                    const tasks = appState.getState('tasks');
+                    const updatedTasks = tasks.filter(t => t.id !== taskId);
+                    appState.setState({ tasks: updatedTasks });
+
+                    // Disparar evento
+                    window.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_DELETED, {
+                        detail: { taskId }
+                    }));
+
+                    // Re-renderizar
+                    this.renderTasks();
+                }
+            }
+        } catch (error) {
+            logger.error('Failed to delete task', error);
+            this.showError('Erro ao excluir tarefa');
+        }
+    }
+
+    /**
      * Manipula eventos de tarefas
      * @param {CustomEvent} event - Evento customizado
      */
@@ -226,17 +394,24 @@ class TaskApp {
             detail: event.detail
         });
 
-        // Aqui futuramente atualizaremos a UI
-        // Por enquanto, apenas logamos
+        // Atualizar UI
         switch (event.type) {
             case STATE_EVENTS.TASK_CREATED:
+                this.renderTasks();
                 this.showNotification('Tarefa criada com sucesso', 'success');
+                break;
+            case STATE_EVENTS.TASK_UPDATED:
+                this.renderTasks();
                 break;
             case STATE_EVENTS.TASK_COMPLETED:
                 this.showNotification('Tarefa concluída!', 'success');
                 break;
             case STATE_EVENTS.TASK_DELETED:
+                this.renderTasks();
                 this.showNotification('Tarefa removida', 'info');
+                break;
+            case STATE_EVENTS.TASKS_LOADED:
+                this.renderTasks();
                 break;
         }
     }

@@ -183,6 +183,45 @@ Antes de implementar qualquer story:
 - [ ] Verificar eventos STATE_EVENTS relevantes
 - [ ] Confirmar storage key 'listaDeTarefas_tasks'
 - [ ] Ajustar escopo para UI apenas se backend existir
+- [ ] **OBRIGATÓRIO**: Implementar integração completa no app.js
+- [ ] **NÃO criar**: Testes unitários (arquivos desnecessários)
+- [ ] **VERIFICAR**: Componente deve funcionar via app.js integration
+
+---
+
+## 🔧 **REGRA CRÍTICA: app.js INTEGRATION**
+
+### **Implementação OBRIGATÓRIA no app.js**
+
+TODAS as stories drafts devem incluir implementação completa no app.js:
+
+✅ **O que implementar:**
+- Import statements no topo do arquivo
+- Inicialização do componente em `setupInitialUI()`
+- Event listeners em `addGlobalEventListeners()`
+- Integração com render methods existentes
+- State management integration
+
+❌ **O que NÃO fazer:**
+- Criar componente sem integração no app.js
+- Deixar funcionalidade isolada
+- Criar arquivos de teste unitário
+- Implementar apenas o componente standalone
+
+**Exemplo de implementação correta:**
+```javascript
+// app.js - TOPO DO ARQUIVO
+import { TaskCard } from './components/task-card.js';
+
+// app.js - setupInitialUI()
+this.initializeTaskCards();
+
+// app.js - initializeTaskCards()
+tasks.forEach(task => {
+    const taskCard = new TaskCard(task);
+    container.appendChild(taskCard.render());
+});
+```
 
 ---
 
@@ -214,5 +253,27 @@ Se algum agent encontrar conflito entre este contexto e uma story:
 3. Documentar descobertas para próximos agents
 
 **Context mantido por:** Party Mode Team
-**Última atualização:** 2025-12-09
+**Última atualização:** 2025-12-11
 **Status:** Ativo para todos os agentes BMAD
+
+---
+
+## 🚫 **TESTES UNITÁRIOS - REMOVIDOS DO PROCESSO**
+
+### **Decisão Estratégica:**
+Testes unitários foram removidos do fluxo de desenvolvimento porque:
+- Criam arquivos "inúteis" sem configuração adequada
+- Aumentam complexidade sem valor agregado atualmente
+- Foco em velocidade de entrega do MVP
+
+**O que foi REMOVIDO:**
+- ❌ Requisito de test coverage
+- ❌ Comprehensive unit tests por task
+- ❌ All existing tests must pass 100%
+- ❌ Todos os requirements de testes unitários das stories
+
+**O que MANTÉM:**
+- ✅ Funcionalidade manual testing
+- ✅ Validade via app.js integration
+- ✅ User acceptance validation
+- ✅ Integration via browser testing

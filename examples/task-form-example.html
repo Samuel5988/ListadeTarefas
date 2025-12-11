@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskForm Example - Lista de Tarefas</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Exemplo de TaskForm</h1>
+            <p>Clique no botão + para adicionar uma nova tarefa</p>
+        </header>
+
+        <main>
+            <section id="tasks-list">
+                <h2>Minhas Tarefas</h2>
+                <div id="tasks-container">
+                    <!-- As tarefas serão listadas aqui -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module">
+        import { taskForm } from '../components/task-form.js';
+        import { taskStorage } from '../services/task-storage.js';
+
+        // Inicializar o formulário
+        taskForm.init();
+
+        // Adicionar animação de pulso ao FAB
+        const fab = document.querySelector('.fab');
+        if (fab) {
+            fab.classList.add('fab--pulse');
+        }
+
+        // Listener para atualizar a lista quando uma tarefa for criada
+        window.addEventListener('task:created', async (event) => {
+            const { task } = event.detail;
+            console.log('Nova tarefa criada:', task);
+
+            // Atualizar a lista de tarefas
+            await loadTasks();
+
+            // Mostrar notificação
+            showNotification(`Tarefa "${task.title}" criada com sucesso!`, 'success');
+        });
+
+        // Carregar tarefas existentes
+        async function loadTasks() {
+            try {
+                const tasks = await taskStorage.getAll();
+                const container = document.getElementById('tasks-container');
+
+                if (tasks.length === 0) {
+                    container.innerHTML = '<p class="empty-state">Nenhuma tarefa encontrada. Clique em + para adicionar!</p>';
+                    return;
+                }
+
+                container.innerHTML = tasks.map(task => `
+                    <div class="task-item" data-task-id="${task.id}">
+                        <h3>${escapeHtml(task.title)}</h3>
+                        ${task.description ? `<p>${escapeHtml(task.description)}</p>` : ''}
+                        <div class="task-meta">
+                            <span class="task-category">${escapeHtml(task.category)}</span>
+                            <span class="task-priority priority-${task.priority}">${getPriorityLabel(task.priority)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar tarefas:', error);
+            }
+        }
+
+        // Função auxiliar para escapar HTML
+        function escapeHtml(unsafe) {
+            const div = document.createElement('div');
+            div.textContent = unsafe;
+            return div.innerHTML;
+        }
+
+        // Obter label da prioridade
+        function getPriorityLabel(priority) {
+            const labels = {
+                low: 'Baixa',
+                medium: 'Média',
+                high: 'Alta'
+            };
+            return labels[priority] || 'Média';
+        }
+
+        // Mostrar notificação
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification--${type}`;
+            notification.textContent = message;
+
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                background-color: ${type === 'success' ? '#28a745' : '#007bff'};
+                color: white;
+                border-radius: 4px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                z-index: 2000;
+                animation: slideIn 0.3s ease;
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remover após 3 segundos
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Adicionar animações CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+
+            .empty-state {
+                text-align: center;
+                color: #6c757d;
+                font-style: italic;
+                padding: 40px;
+            }
+
+            .task-item {
+                background-color: var(--gray-1);
+                border: 1px solid var(--gray-3);
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+                transition: all 0.2s ease;
+            }
+
+            .task-item:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+
+            .task-meta {
+                display: flex;
+                gap: 12px;
+                margin-top: 8px;
+            }
+
+            .task-category,
+            .task-priority {
+                font-size: 0.875rem;
+                padding: 2px 8px;
+                border-radius: 12px;
+            }
+
+            .task-category {
+                background-color: #e9ecef;
+                color: #495057;
+            }
+
+            .task-priority {
+                color: white;
+            }
+
+            .priority-low {
+                background-color: #28a745;
+            }
+
+            .priority-medium {
+                background-color: #ffc107;
+            }
+
+            .priority-high {
+                background-color: #dc3545;
+            }
+
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            header {
+                margin-bottom: 40px;
+            }
+
+            h1 {
+                color: var(--gray-8);
+            }
+
+            h2 {
+                color: var(--gray-7);
+                margin-bottom: 20px;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Carregar tarefas ao iniciar
+        loadTasks();
+    </script>
+</body>
+</html>

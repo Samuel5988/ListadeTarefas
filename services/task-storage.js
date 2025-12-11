@@ -285,6 +285,22 @@ class TaskStorage {
     }
 
     /**
+     * Sanitiza input contra XSS
+     * @param {string} input - Input a ser sanitizado
+     * @returns {string} - Input sanitizado
+     */
+    sanitizeInput(input) {
+        if (typeof input !== 'string') {
+            return '';
+        }
+
+        // Criar elemento div para escapar HTML
+        const div = document.createElement('div');
+        div.textContent = input;
+        return div.innerHTML;
+    }
+
+    /**
      * Valida e limpa lista de tarefas
      * @param {Array} tasks - Lista de tarefas
      * @returns {Array}
@@ -294,21 +310,26 @@ class TaskStorage {
             return [];
         }
 
+        const validCategories = ['Tarefas', 'Pessoal', 'Trabalho', 'Estudo', 'Outros'];
+
         return tasks
             .filter(task => task && typeof task === 'object')
-            .map(task => ({
-                id: task.id || this.generateId(),
-                title: String(task.title || '').trim(),
-                description: String(task.description || '').trim(),
-                completed: Boolean(task.completed),
-                createdAt: task.createdAt || new Date().toISOString(),
-                updatedAt: task.updatedAt || new Date().toISOString(),
-                category: String(task.category || 'default').trim(),
-                priority: ['low', 'medium', 'high'].includes(task.priority)
-                    ? task.priority
-                    : 'medium',
-                dueDate: task.dueDate || null,
-            }))
+            .map(task => {
+                const category = String(task.category || 'Tarefas').trim();
+                return {
+                    id: task.id || this.generateId(),
+                    title: this.sanitizeInput(String(task.title || '')).trim(),
+                    description: this.sanitizeInput(String(task.description || '')).trim(),
+                    completed: Boolean(task.completed),
+                    createdAt: task.createdAt || new Date().toISOString(),
+                    updatedAt: task.updatedAt || new Date().toISOString(),
+                    category: validCategories.includes(category) ? category : 'Tarefas',
+                    priority: ['low', 'medium', 'high'].includes(task.priority)
+                        ? task.priority
+                        : 'medium',
+                    dueDate: task.dueDate || null,
+                };
+            })
             .filter(task => task.title.length > 0);
     }
 
