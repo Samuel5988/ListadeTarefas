@@ -174,18 +174,112 @@ export class TaskCard {
 
 ---
 
-## 📋 **CHECKLIST PARA NOVAS STORIES**
+## 📋 **CHECKLIST COMPLETA PARA NOVAS STORIES**
 
-Antes de implementar qualquer story:
+### 🔍 **FASE DE DESCOBERTA (OBRIGATÓRIA antes de criar story)**
 
-- [ ] Verificar TaskStorage para métodos existentes
-- [ ] Verificar AppState para estado existente
-- [ ] Verificar eventos STATE_EVENTS relevantes
-- [ ] Confirmar storage key 'listaDeTarefas_tasks'
-- [ ] Ajustar escopo para UI apenas se backend existir
+#### **1. Verificação de Código Existente:**
+- [ ] **TaskStorage (`services/task-storage.js`)**: Verificar métodos já implementados
+  - [ ] add(), update(), remove(), getAll() disponíveis?
+  - [ ] Schema completo com todos os campos necessários?
+  - [ ] Cache e validação já implementados?
+
+- [ ] **AppState (`state/app-state.js`)**: Verificar estado e eventos
+  - [ ] Campos de estado já existem para a funcionalidade?
+  - [ ] STATE_EVENTS relevantes já definidos?
+  - [ ] Subscribers pattern funcionando?
+
+- [ ] **Componentes (`components/*.js`)**: Verificar UI existente
+  - [ ] Alguém já implementou componente similar?
+  - [ ] Padrões de código estabelecidos?
+  - [ ] Estilos já definidos em `styles/components.css`?
+
+#### **2. Análise Funcionalidade:**
+- [ ] A funcionalidade já está parcial ou totalmente implementada?
+- [ ] Há tests/examples que demonstram a funcionalidade?
+- [ ] O app.js já tem integração relacionada?
+
+#### **3. Descoberta por Files glob:**
+```bash
+# Procurar por funcionalidade similar
+grep -r "palavra-chave" components/ services/ state/ --include="*.js"
+
+# Verificar constants/events
+grep -r "CONSTANT_NAME" . --include="*.js"
+```
+
+---
+
+### 📚 **VERIFICAÇÃO DA ÚLTIMA RETROSPECTIVE (OBRIGATÓRIO)**
+
+#### **4. Lições Aprendidas do Epic Anterior:**
+- [ ] Ler retrospective do último epic completado
+- [ ] Identificar padrões de issues recorrentes
+- [ ] Verificar action items pendentes que afetam esta story
+- [ ] Aplicar lições sobre over-implementation
+
+**Última Retrospective Disponível:**
+- **Epic 2:** `docs/sprint-artifacts/epic-2-retro-2025-12-12.md`
+  - **Key Learning:** 80% do Epic 2 já estava implementado no Epic 1
+  - **Action:** Sempre verificar o que existe antes de planejar
+  - **Code Review Issues:** Import errors, XSS sanitização, styling issues
+
+#### **5. Verificação de Status do Projeto:**
+- [ ] Conferir `sprint-status.yaml` para progresso atual
+- [ ] Verificar se epic anterior está realmente "done"
+- [ ] Identificar dependencies bloqueantes
+
+---
+
+### 🎯 **FASE DE PLANEJAMENTO DA STORY**
+
+#### **6. Definição de Escopo Correto:**
+- [ ] **Backend já existe?** → Focar apenas em UI/UX
+- [ ] **Backend não existe?** → Implementar backend + UI
+- [ ] **Parcialmente implementado?** → Complementar o que falta
+
+#### **7. Marcação de Scope:**
+- [ ] Marcar como "UI-focused" no título se backend existir
+- [ ] Especificar claramente o que NÃO implementar
+- [ ] Listar dependências de sistemas existentes
+
+---
+
+### 🔧 **IMPLEMENTAÇÃO**
+
+#### **8. Requisitos Técnicos:**
 - [ ] **OBRIGATÓRIO**: Implementar integração completa no app.js
-- [ ] **NÃO criar**: Testes unitários (arquivos desnecessários)
-- [ ] **VERIFICAR**: Componente deve funcionar via app.js integration
+- [ ] Usar eventos STATE_EVENTS existentes
+- [ ] Seguir padrões de código estabelecidos
+- [ ] Manter storage key 'listaDeTarefas_tasks'
+
+#### **9** **O que NÃO fazer:**
+- [ ] **NÃO criar** testes unitários (arquivos desnecessários)
+- [ ] **NÃO recriar** métodos TaskStorage
+- [ ] **NÃO mudar** schema ou storage keys
+- [ ] **NÃO deixar** componente sem integração app.js
+
+---
+
+### ✅ **VALIDAÇÃO FINAL**
+
+#### **10. Checklist de QA:**
+- [ ] Componente funciona via app.js integration
+- [ ] Eventos disparam corretamente
+- [ ] Estado persiste em localStorage
+- [ ] Não há errors no console
+- [ ] Funcionalidade testada manualmente
+
+**Log de Descoberta (preencher ao criar story):**
+```
+Data: ____-__-__
+Story: __-__-_________
+Descoberta:
+- Backend já existe: [ ] Sim [ ] Não
+- Componentes similares: [Listar]
+- Lições aplicadas: [Retrospective X]
+- Escopo ajustado: [Descrever]
+```
 
 ---
 
@@ -253,8 +347,26 @@ Se algum agent encontrar conflito entre este contexto e uma story:
 3. Documentar descobertas para próximos agents
 
 **Context mantido por:** Party Mode Team
-**Última atualização:** 2025-12-11
+**Última atualização:** 2025-12-12
 **Status:** Ativo para todos os agentes BMAD
+**Última atualização:** Adicionada checklist completa de descoberta e retrospective
+
+---
+
+## 🔄 **HISTÓRICO DE ATUALIZAÇÕES**
+
+### **2025-12-12 - Checklist Completa Adicionada**
+- **Motivo:** Retrospective do Epic 2 revelou necessidade de discovery sistemático
+- **Adicionado:**
+  - Fase de descoberta obrigatória antes de criar stories
+  - Verificação da última retrospective
+  - Log de descoberta para cada story
+  - Comandos de busca por funcionalidade
+- **Benefício:** Evitar duplicação de esforço e over-implementation
+
+### **2025-12-11 - Adicionado seção de testes unitários**
+- **Motivo:** Foco em velocidade de entrega MVP
+- **Decisão:** Removidos testes unitários do fluxo
 
 ---
 

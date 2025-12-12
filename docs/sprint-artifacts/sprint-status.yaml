@@ -50,8 +50,8 @@ development_status:
   2-1-componente-task-card: done
   2-2-formulario-de-criacao-de-tarefas: done
   2-3-edicao-e-remocao-de-tarefas: done
-  2-4-marcacao-de-conclusao: backlog
-  epic-2-retrospective: optional
+  2-4-marcacao-de-conclusao: done
+  epic-2-retrospective: done
 
   # Epic 3: Organização e Priorização
   epic-3: backlog
