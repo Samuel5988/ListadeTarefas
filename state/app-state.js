@@ -143,10 +143,14 @@ class AppState {
         const previousState = this.deepClone(this.state);
         const changes = [];
 
+        // Detectar mudanças, mas ignorar tarefas (elas são gerenciadas pelo TaskStorage)
+        const filteredPartialState = { ...partialState };
+        delete filteredPartialState.tasks; // Remover tasks para não salvar no storage
+
         // Detectar mudanças
-        for (const key in partialState) {
+        for (const key in filteredPartialState) {
             const oldValue = previousState[key];
-            const newValue = partialState[key];
+            const newValue = filteredPartialState[key];
 
             if (!this.shallowEqual(oldValue, newValue)) {
                 changes.push({
@@ -166,22 +170,26 @@ class AppState {
         }
 
         // Aplicar mudanças apenas se houver diferenças reais
-        if (changes.length > 0) {
+        if (changes.length > 0 || (partialState.tasks && JSON.stringify(previousState.tasks) !== JSON.stringify(partialState.tasks))) {
+            // Aplicar mudanças completas (incluindo tasks para o estado em memória)
             this.state = this.mergeState(this.state, partialState);
 
-            // Disparar eventos específicos (Story 1.2 AC: 4)
-            this.dispatchSpecificEvents(partialState, changes);
+            // Disparar eventos específicos apenas para mudanças não-tasks
+            if (changes.length > 0) {
+                this.dispatchSpecificEvents(filteredPartialState, changes);
+                this.notifySubscribers(this.getState(), changes);
+                this.dispatch('state:changed', { changes, previousState, newState: this.getState() });
+            }
 
-            // Notificar subscribers com (newState, changes) (Story 1.2 AC: 3)
-            this.notifySubscribers(this.getState(), changes);
+            logger.debug('State updated via setState', {
+                partialState,
+                filteredPartialState,
+                changes,
+                hasTasks: !!partialState.tasks
+            });
 
-            // Disparar evento geral (Story 1.2 AC: 4)
-            this.dispatch('state:changed', { changes, previousState, newState: this.getState() });
-
-            logger.debug('State updated via setState', { partialState, changes });
-
-            // Salvar no storage se autoSave estiver ativo
-            if (this.state.preferences?.autoSave || this.state.settings?.autoSave) {
+            // Salvar no storage apenas se não for apenas mudança de tasks e autoSave estiver ativo
+            if ((this.state.preferences?.autoSave || this.state.settings?.autoSave) && changes.length > 0) {
                 this.saveToStorage();
             }
         }
@@ -208,8 +216,11 @@ class AppState {
         // Notificar subscribers
         this.notifySubscribers(this.state, prevState);
 
-        // Salvar no storage
-        if (save && this.state.settings.autoSave) {
+        // Filtrar mudanças de tasks para o storage
+        const hasNonTaskChanges = Object.keys(updates).some(key => key !== 'tasks');
+
+        // Salvar no storage apenas se houver mudanças não-tasks
+        if (save && hasNonTaskChanges && this.state.settings.autoSave) {
             this.saveToStorage();
         }
     }
@@ -217,22 +228,39 @@ class AppState {
     /**
      * Atualiza tarefas
      * @param {Array|Function} tasks - Novas tarefas ou função para atualizar
+     * @param {boolean} silentUpdate - Se true, não dispara eventos (para sincronização)
      */
-    updateTasks(tasks) {
+    updateTasks(tasks, silentUpdate = false) {
         const currentTasks = this.getState('tasks');
         const newTasks = typeof tasks === 'function'
             ? tasks(currentTasks)
             : tasks;
 
+        // Evitar disparar eventos se não houver mudança real
+        if (this.shallowEqual(currentTasks, newTasks)) {
+            return;
+        }
+
         this.update({ tasks: newTasks });
 
-        // Disparar evento específico
-        if (newTasks.length > currentTasks.length) {
-            this.dispatch(STATE_EVENTS.TASK_CREATED);
-        } else if (newTasks.length < currentTasks.length) {
-            this.dispatch(STATE_EVENTS.TASK_DELETED);
+        // Disparar evento específico - mas apenas se não for silent update
+        if (!silentUpdate) {
+            if (newTasks.length > currentTasks.length) {
+                this.dispatch(STATE_EVENTS.TASK_CREATED);
+            } else if (newTasks.length < currentTasks.length) {
+                this.dispatch(STATE_EVENTS.TASK_DELETED);
+            } else {
+                // Verificar se houve mudança no conteúdo das tarefas
+                const hasContentChange = !currentTasks.every((task, index) =>
+                    this.shallowEqual(task, newTasks[index])
+                );
+
+                if (hasContentChange) {
+                    this.dispatch(STATE_EVENTS.TASK_UPDATED);
+                }
+            }
         } else {
-            this.dispatch(STATE_EVENTS.TASK_UPDATED);
+            logger.debug('Silent task update completed, no events dispatched');
         }
     }
 
@@ -889,8 +917,9 @@ class AppState {
         try {
             if (typeof localStorage === 'undefined') return;
 
+            // Não salvar tasks aqui - elas são gerenciadas pelo TaskStorage
+            // para evitar duplicidade e conflitos
             const stateToSave = {
-                tasks: this.state.tasks,
                 ui: {
                     theme: this.state.ui.theme,
                     sidebarOpen: this.state.ui.sidebarOpen,
@@ -899,8 +928,16 @@ class AppState {
                 lastSaved: new Date().toISOString(),
             };
 
+            // DEBUG: Verificar se há tarefas sendo salvas indevidamente
+            if (this.state.tasks && this.state.tasks.length > 0) {
+                logger.warn('saveToStorage called with tasks in state - these will be excluded', {
+                    taskCount: this.state.tasks.length,
+                    taskIds: this.state.tasks.map(t => t.id)
+                });
+            }
+
             localStorage.setItem('appState', JSON.stringify(stateToSave));
-            logger.debug('State saved to storage');
+            logger.debug('State saved to storage (tasks excluded)');
         } catch (error) {
             logger.error('Failed to save state to storage', error);
         }

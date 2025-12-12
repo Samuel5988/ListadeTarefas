@@ -22,7 +22,7 @@ class TaskStorage {
         this.config = { ...STORAGE_CONFIG, ...config };
         this.isAvailable = this.checkStorageAvailability();
         this.cache = new Map();
-        this.cacheTimeout = 5 * 60 * 1000; // 5 minutos
+        this.cacheTimeout = 30 * 1000; // 30 segundos
 
         if (this.isAvailable) {
             this.migrateIfNeeded();
@@ -74,7 +74,7 @@ class TaskStorage {
             }
 
             const parsed = JSON.parse(data);
-            const tasks = this.validateAndClean(parsed);
+            const tasks = this.validateAndClean(parsed.tasks || []);
 
             // Atualizar cache
             this.setCache('all', tasks);
@@ -129,7 +129,11 @@ class TaskStorage {
      */
     async add(task) {
         try {
+            logger.info('Starting task addition', { task });
+
             const tasks = await this.getAll();
+            logger.info('Current tasks before addition', { count: tasks.length, taskIds: tasks.map(t => t.id) });
+
             const newTask = {
                 id: task.id || this.generateId(),
                 title: task.title,
@@ -144,7 +148,16 @@ class TaskStorage {
             };
 
             tasks.push(newTask);
+            logger.info('Tasks after push', { count: tasks.length, taskIds: tasks.map(t => t.id) });
+
             await this.saveAll(tasks);
+
+            // IMPORTANTE: Limpar cache após adição para garantir dados frescos
+            this.clearCache();
+
+            // Verificar imediatamente após salvar
+            const verifyTasks = await this.getAll();
+            logger.info('Tasks verification after addition', { count: verifyTasks.length, taskIds: verifyTasks.map(t => t.id) });
 
             logger.info('Task added to storage', { taskId: newTask.id });
             return newTask;
@@ -178,6 +191,9 @@ class TaskStorage {
 
             await this.saveAll(tasks);
 
+            // IMPORTANTE: Limpar cache após atualização para garantir dados frescos
+            this.clearCache();
+
             logger.info('Task updated in storage', { taskId });
             return tasks[taskIndex];
         } catch (error) {
@@ -193,8 +209,13 @@ class TaskStorage {
      */
     async remove(taskId) {
         try {
+            logger.info('Starting task removal', { taskId });
+
             const tasks = await this.getAll();
+            logger.info('Current tasks before removal', { count: tasks.length, taskIds: tasks.map(t => t.id) });
+
             const filteredTasks = tasks.filter(t => t.id !== taskId);
+            logger.info('Tasks after filter', { count: filteredTasks.length, taskIds: filteredTasks.map(t => t.id) });
 
             if (tasks.length === filteredTasks.length) {
                 logger.warn('Task not found for removal', { taskId });
@@ -202,6 +223,13 @@ class TaskStorage {
             }
 
             await this.saveAll(filteredTasks);
+
+            // IMPORTANTE: Limpar cache após remoção para garantir dados frescos
+            this.clearCache();
+
+            // Verificar imediatamente após salvar
+            const verifyTasks = await this.getAll();
+            logger.info('Tasks verification after removal', { count: verifyTasks.length, taskIds: verifyTasks.map(t => t.id) });
 
             logger.info('Task removed from storage', { taskId });
             return true;
@@ -316,6 +344,19 @@ class TaskStorage {
             .filter(task => task && typeof task === 'object')
             .map(task => {
                 const category = String(task.category || 'Tarefas').trim();
+
+                // Normalizar prioridade para formato consistente (low, medium, high)
+                let normalizedPriority = 'medium'; // default
+                const priorityValue = String(task.priority || 'medium').toLowerCase().trim();
+
+                if (['1', 'low'].includes(priorityValue)) {
+                    normalizedPriority = 'low';
+                } else if (['3', 'medium'].includes(priorityValue)) {
+                    normalizedPriority = 'medium';
+                } else if (['5', 'high'].includes(priorityValue)) {
+                    normalizedPriority = 'high';
+                }
+
                 return {
                     id: task.id || this.generateId(),
                     title: this.sanitizeInput(String(task.title || '')).trim(),
@@ -324,9 +365,7 @@ class TaskStorage {
                     createdAt: task.createdAt || new Date().toISOString(),
                     updatedAt: task.updatedAt || new Date().toISOString(),
                     category: validCategories.includes(category) ? category : 'Tarefas',
-                    priority: ['low', 'medium', 'high'].includes(task.priority)
-                        ? task.priority
-                        : 'medium',
+                    priority: normalizedPriority,
                     dueDate: task.dueDate || null,
                 };
             })
@@ -511,4 +550,5 @@ class TaskStorage {
 export const taskStorage = new TaskStorage();
 
 // Exportar a classe para permitir múltiplas instâncias se necessário
+export { TaskStorage };
 export default TaskStorage;

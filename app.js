@@ -11,6 +11,8 @@ import { taskStorage } from './services/task-storage.js';
 import { ThemeManager } from './components/theme-manager.js';
 import { TaskCard } from './components/task-card.js';
 import { taskForm } from './components/task-form.js';
+import { TaskEditForm } from './components/task-edit-form.js';
+import { ConfirmDialog } from './components/confirm-dialog.js';
 
 /**
  * Classe principal da aplicação
@@ -21,6 +23,7 @@ class TaskApp {
         this.components = new Map();
         this.eventListeners = new Map();
         this.themeManager = null;
+        this.deleteInProgress = false;
 
         // Bind métodos
         this.handleDOMLoaded = this.handleDOMLoaded.bind(this);
@@ -129,10 +132,19 @@ class TaskApp {
             const tasks = await taskStorage.getAll();
 
             if (tasks.length > 0) {
-                appState.updateTasks(tasks);
-                logger.info(`Loaded ${tasks.length} tasks`);
+                // Comparar com estado atual para evitar atualizações desnecessárias
+                const currentTasks = appState.getState('tasks');
+                const tasksChanged = JSON.stringify(currentTasks) !== JSON.stringify(tasks);
+
+                if (tasksChanged) {
+                    appState.updateTasks(tasks, true); // silent update para evitar eventos duplicados
+                    logger.info(`Loaded ${tasks.length} tasks (state updated silently)`);
+                } else {
+                    logger.info(`Tasks already in sync, skipping update`);
+                }
             } else {
                 logger.info('No tasks found, starting with empty list');
+                appState.updateTasks([], true); // silent update para evitar eventos desnecessários
             }
         } catch (error) {
             logger.error('Failed to load tasks', error);
@@ -144,6 +156,7 @@ class TaskApp {
             );
 
             // Continuar com estado vazio
+            appState.updateTasks([], true); // silent update para evitar eventos desnecessários
         }
     }
 
@@ -164,8 +177,15 @@ class TaskApp {
         // Inicializar TaskForm
         this.initializeTaskForm();
 
+        // Inicializar componentes de edição/remoção
+        this.taskEditForm = new TaskEditForm();
+        this.confirmDialog = new ConfirmDialog();
+
         // Renderizar tarefas existentes
         this.renderTasks();
+
+        // Configurar listeners globais para ações de edição/remoção
+        this.setupEditDeleteListeners();
 
         // Esconder mensagem de carregamento se existir
         const loadingEl = document.querySelector('.loading-message');
@@ -226,13 +246,12 @@ class TaskApp {
         // Eventos de estado
         window.addEventListener(STATE_EVENTS.TASK_CREATED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.TASK_UPDATED, this.handleTaskEvents);
-        window.addEventListener(STATE_EVENTS.TASK_DELETED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.TASK_COMPLETED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.THEME_CHANGED, this.handleThemeChange);
 
         // Eventos de storage (para sincronização entre abas)
         window.addEventListener('storage', (e) => {
-            if (e.key === taskStorage.config.key) {
+            if (e.key === taskStorage.config.key && !this.deleteInProgress) {
                 logger.info('Storage changed in another tab, reloading...');
                 this.loadTasks();
             }
@@ -240,7 +259,7 @@ class TaskApp {
 
         // Eventos de visibilidade da página
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
+            if (!document.hidden && !this.deleteInProgress) {
                 logger.debug('Page became visible, checking for updates...');
                 this.loadTasks();
             }
@@ -286,35 +305,63 @@ class TaskApp {
                     </div>
                 `;
             } else {
-                // Renderizar cada tarefa
-                tasks.forEach(task => {
-                    const taskCard = new TaskCard(task);
-                    const cardElement = taskCard.render();
+                // Renderizar cada tarefa - adicionado timeout para evitar loop infinito
+                const renderTimeout = setTimeout(() => {
+                    logger.warn('Task rendering timeout - potential infinite loop detected');
+                    throw new Error('Task rendering timeout - possible infinite loop');
+                }, 5000); // 5 segundos timeout
 
-                    // Adicionar event listeners com cleanup
-                    const toggleHandler = (e) => {
-                        this.handleTaskToggle(e.detail.taskId);
-                    };
-                    const deleteHandler = (e) => {
-                        this.handleTaskDelete(e.detail.taskId);
-                    };
+                try {
+                    tasks.forEach((task, index) => {
+                        // Verificação de segurança para prevenir loop infinito
+                        if (index > 1000) {
+                            logger.error('Too many tasks to render - possible infinite loop');
+                            throw new Error('Too many tasks to render - possible infinite loop');
+                        }
 
-                    cardElement.addEventListener('task:toggle', toggleHandler);
-                    cardElement.addEventListener('task:delete', deleteHandler);
+                        const taskCard = new TaskCard(task);
+                        const cardElement = taskCard.render();
 
-                    // Store cleanup function for each listener
-                    this.taskCardCleanup.push(() => {
-                        cardElement.removeEventListener('task:toggle', toggleHandler);
-                        cardElement.removeEventListener('task:delete', deleteHandler);
+                        // Adicionar event listeners com cleanup
+                        const toggleHandler = (e) => {
+                            this.handleTaskToggle(e.detail.taskId);
+                        };
+                        const deleteHandler = (e) => {
+                            this.handleTaskDelete(e.detail.taskId);
+                        };
+
+                        cardElement.addEventListener('task:toggle', toggleHandler);
+                        cardElement.addEventListener('task:delete', deleteHandler);
+
+                        // Store cleanup function for each listener
+                        this.taskCardCleanup.push(() => {
+                            cardElement.removeEventListener('task:toggle', toggleHandler);
+                            cardElement.removeEventListener('task:delete', deleteHandler);
+                        });
+
+                        container.appendChild(cardElement);
                     });
 
-                    container.appendChild(cardElement);
-                });
+                    clearTimeout(renderTimeout);
+                } catch (renderError) {
+                    clearTimeout(renderTimeout);
+                    throw renderError;
+                }
             }
 
             logger.info(`Rendered ${tasks.length} tasks`);
         } catch (error) {
             logger.error('Failed to render tasks', error);
+            // Mostrar mensagem de erro ao usuário
+            const container = document.querySelector('main .grid');
+            container.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6 md:col-span-2 lg:col-span-3">
+                    <div class="text-center">
+                        <h3 class="text-red-800 font-medium">Erro ao renderizar tarefas</h3>
+                        <p class="text-red-600 mt-2">Por favor, recarregue a página ou tente novamente.</p>
+                    </div>
+                </div>
+            `;
         }
     }
 
@@ -361,24 +408,24 @@ class TaskApp {
             const confirmed = confirm('Tem certeza que deseja excluir esta tarefa?');
 
             if (confirmed) {
+                this.deleteInProgress = true;
+
                 const success = await taskStorage.remove(taskId);
 
                 if (success) {
-                    // Atualizar estado
+                    // Atualizar estado diretamente sem disparar evento
                     const tasks = appState.getState('tasks');
                     const updatedTasks = tasks.filter(t => t.id !== taskId);
                     appState.setState({ tasks: updatedTasks });
 
-                    // Disparar evento
-                    window.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_DELETED, {
-                        detail: { taskId }
-                    }));
-
-                    // Re-renderizar
+                    // Renderizar UI diretamente
                     this.renderTasks();
                 }
+
+                this.deleteInProgress = false;
             }
         } catch (error) {
+            this.deleteInProgress = false;
             logger.error('Failed to delete task', error);
             this.showError('Erro ao excluir tarefa');
         }
@@ -388,31 +435,57 @@ class TaskApp {
      * Manipula eventos de tarefas
      * @param {CustomEvent} event - Evento customizado
      */
-    handleTaskEvents(event) {
+    async handleTaskEvents(event) {
         logger.debug('Task event received', {
             type: event.type,
             detail: event.detail
         });
 
-        // Atualizar UI
-        switch (event.type) {
-            case STATE_EVENTS.TASK_CREATED:
-                this.renderTasks();
-                this.showNotification('Tarefa criada com sucesso', 'success');
-                break;
-            case STATE_EVENTS.TASK_UPDATED:
-                this.renderTasks();
-                break;
-            case STATE_EVENTS.TASK_COMPLETED:
-                this.showNotification('Tarefa concluída!', 'success');
-                break;
-            case STATE_EVENTS.TASK_DELETED:
-                this.renderTasks();
-                this.showNotification('Tarefa removida', 'info');
-                break;
-            case STATE_EVENTS.TASKS_LOADED:
-                this.renderTasks();
-                break;
+        // Evitar recursão infinita - não recarregar tarefas em response a eventos de storage
+        try {
+            // Atualizar UI
+            switch (event.type) {
+                case STATE_EVENTS.TASK_CREATED:
+                    // Para TASK_CREATED, recarregar tarefas do storage para garantir sincronia
+                    // Isso evita que tarefas excluídas permaneçam no estado
+                    if (!this.deleteInProgress) {
+                        // Limpar cache para garantir dados frescos do storage
+                        taskStorage.clearCache();
+                        const tasks = await taskStorage.getAll();
+                        appState.setState({ tasks: tasks });
+                        logger.info('Tasks reloaded from storage after TASK_CREATED', { count: tasks.length });
+                    }
+                    this.renderTasks();
+                    this.showNotification('Tarefa criada com sucesso', 'success');
+                    break;
+                case STATE_EVENTS.TASK_UPDATED:
+                    // Para TASK_UPDATED, verificar se os dados do evento estão disponíveis
+                    // Se estiverem, usar os dados do evento para evitar chamada ao storage
+                    if (event.detail && event.detail.task) {
+                        // Atualizar apenas a tarefa específica no estado
+                        const tasks = appState.getState('tasks');
+                        const updatedTasks = tasks.map(t =>
+                            t.id === event.detail.taskId ? event.detail.task : t
+                        );
+                        appState.setState({ tasks: updatedTasks });
+                    }
+                    this.renderTasks();
+                    break;
+                case STATE_EVENTS.TASK_COMPLETED:
+                    this.showNotification('Tarefa concluída!', 'success');
+                    break;
+                                case STATE_EVENTS.TASKS_LOADED:
+                    // Para TASKS_LOADED, usar os dados do evento se disponíveis
+                    // Isso evita conflitos com o estado atual
+                    if (event.detail && Array.isArray(event.detail)) {
+                        // Usar dados do evento diretamente para garantir consistência
+                        appState.setState({ tasks: event.detail });
+                    }
+                    this.renderTasks();
+                    break;
+            }
+        } catch (error) {
+            logger.error('Error handling task event', { event: event.type, error });
         }
     }
 
@@ -613,6 +686,188 @@ class TaskApp {
 
         this.initialized = false;
         logger.info('Application destroyed');
+    }
+
+    /**
+     * Configura listeners para edição e remoção de tarefas
+     */
+    setupEditDeleteListeners() {
+        // Event delegation para menus de ação em todos os cards
+        document.addEventListener('click', (e) => {
+            // Menu dropdown toggle
+            if (e.target.matches('.task-card__menu-button') || e.target.closest('.task-card__menu-button')) {
+                e.stopPropagation();
+                const button = e.target.closest('.task-card__menu-button');
+                const taskId = button.dataset.taskId;
+                this.toggleTaskMenu(taskId);
+                return;
+            }
+
+            // Editar tarefa
+            if (e.target.matches('.task-card__menu-item--edit') || e.target.closest('.task-card__menu-item--edit')) {
+                e.stopPropagation();
+                const menuItem = e.target.closest('.task-card__menu-item--edit');
+                const taskId = menuItem.dataset.taskId;
+                this.editTask(taskId);
+                return;
+            }
+
+            // Remover tarefa
+            if (e.target.matches('.task-card__menu-item--delete') || e.target.closest('.task-card__menu-item--delete')) {
+                e.stopPropagation();
+                const menuItem = e.target.closest('.task-card__menu-item--delete');
+                const taskId = menuItem.dataset.taskId;
+                this.deleteTask(taskId);
+                return;
+            }
+
+            // Fechar menus ao clicar fora
+            if (!e.target.closest('.task-card__actions')) {
+                TaskCard.closeAllMenus();
+            }
+        });
+
+        // Listener para tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                TaskCard.closeAllMenus();
+                if (this.taskEditForm.isOpen) {
+                    this.taskEditForm.close();
+                }
+                if (this.confirmDialog.isOpen) {
+                    this.confirmDialog.close();
+                }
+            }
+        });
+    }
+
+    /**
+     * Alterna a visibilidade do menu de ações
+     */
+    toggleTaskMenu(taskId) {
+        const menu = document.querySelector(`.task-card__menu[data-task-id="${taskId}"]`);
+        if (menu) {
+            const isOpen = menu.classList.contains('task-card__menu--open');
+            TaskCard.closeAllMenus();
+            if (!isOpen) {
+                menu.classList.add('task-card__menu--open');
+            }
+        }
+    }
+
+    /**
+     * Abre o formulário de edição
+     */
+    async editTask(taskId) {
+        try {
+            await this.taskEditForm.open(taskId);
+        } catch (error) {
+            logger.error('Error opening edit form:', error);
+            this.showFeedback('Erro ao abrir edição', 'error');
+        }
+    }
+
+    /**
+     * Remove uma tarefa
+     */
+    async deleteTask(taskId) {
+        try {
+            // Buscar tarefa do taskStorage
+            const tasks = await taskStorage.getAll();
+            const task = tasks.find(t => t.id === taskId);
+
+            if (!task) {
+                logger.error(`Task ${taskId} not found`);
+                return;
+            }
+
+            // Verificar preferência "Não perguntar novamente"
+            const skipConfirm = localStorage.getItem('skipDeleteConfirm') === 'true';
+
+            if (skipConfirm) {
+                // Deletar diretamente
+                await this.performTaskDelete(taskId);
+            } else {
+                // Mostrar diálogo de confirmação
+                await this.confirmDialog.show(task, async (dontAskAgain) => {
+                    if (dontAskAgain) {
+                        localStorage.setItem('skipDeleteConfirm', 'true');
+                    }
+                    await this.performTaskDelete(taskId);
+                });
+            }
+
+        } catch (error) {
+            logger.error('Error deleting task:', error);
+            this.showFeedback('Erro ao deletar tarefa', 'error');
+        }
+    }
+
+    /**
+     * Executa a remoção da tarefa
+     */
+    async performTaskDelete(taskId) {
+        try {
+            // Usar loading state no card
+            const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            if (card) {
+                card.classList.add('task-card--loading');
+            }
+
+            // Remover do taskStorage - corrigido para async
+            const result = await taskStorage.remove(taskId);
+
+            if (result) {
+                // Disparar evento de atualização
+                document.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_DELETED, {
+                    detail: { taskId }
+                }));
+
+                // Remover card com animação
+                if (card) {
+                    card.classList.add('task-card--removing');
+                    setTimeout(() => {
+                        card.remove();
+                    }, 300);
+                }
+
+                this.showFeedback('Tarefa removida com sucesso', 'success');
+            } else {
+                throw new Error('Failed to delete task');
+            }
+
+        } catch (error) {
+            logger.error('Error performing task delete:', error);
+            this.showFeedback('Erro ao remover tarefa', 'error');
+
+            // Remover loading state em caso de erro
+            const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            if (card) {
+                card.classList.remove('task-card--loading');
+            }
+        }
+    }
+
+    /**
+     * Mostra mensagem de feedback
+     */
+    showFeedback(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast--${type}`;
+        toast.textContent = message;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('toast--hide');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
     }
 }
 

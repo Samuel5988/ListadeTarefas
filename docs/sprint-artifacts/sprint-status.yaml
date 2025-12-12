@@ -49,7 +49,7 @@ development_status:
   epic-2: in-progress
   2-1-componente-task-card: done
   2-2-formulario-de-criacao-de-tarefas: done
-  2-3-edicao-e-remocao-de-tarefas: backlog
+  2-3-edicao-e-remocao-de-tarefas: done
   2-4-marcacao-de-conclusao: backlog
   epic-2-retrospective: optional
 

@@ -116,11 +116,11 @@ export class TaskCard {
      */
     createCardStructure() {
         // Container do checkbox e conteúdo
-        const contentWrapper = document.createElement('div');
-        contentWrapper.className = 'task-card__content-wrapper';
+        this.contentWrapper = document.createElement('div');
+        this.contentWrapper.className = 'task-card__content-wrapper';
 
         // Criar checkbox
-        this.createCheckbox(contentWrapper);
+        this.createCheckbox(this.contentWrapper);
 
         // Criar conteúdo principal
         const mainContent = document.createElement('div');
@@ -139,8 +139,12 @@ export class TaskCard {
             this.createCategoryBadge(mainContent);
         }
 
-        contentWrapper.appendChild(mainContent);
-        this.element.appendChild(contentWrapper);
+        this.contentWrapper.appendChild(mainContent);
+
+        // Criar menu de ações
+        this.createActionMenu();
+
+        this.element.appendChild(this.contentWrapper);
     }
 
     /**
@@ -200,6 +204,61 @@ export class TaskCard {
     }
 
     /**
+     * Cria o menu de ações do card
+     */
+    createActionMenu() {
+        // Container das ações
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'task-card__actions';
+
+        // Botão do menu (três pontos)
+        const menuButton = document.createElement('button');
+        menuButton.className = 'task-card__menu-button';
+        menuButton.setAttribute('data-task-id', this.task.id);
+        menuButton.setAttribute('aria-label', 'Menu de ações');
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.innerHTML = `
+            <span class="task-card__menu-dots"></span>
+            <span class="task-card__menu-dots"></span>
+            <span class="task-card__menu-dots"></span>
+        `;
+
+        // Dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'task-card__menu';
+        menu.setAttribute('data-task-id', this.task.id);
+        menu.innerHTML = `
+            <button class="task-card__menu-item task-card__menu-item--edit"
+                    data-task-id="${this.task.id}"
+                    type="button">
+                <svg class="task-card__menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Editar
+            </button>
+            <button class="task-card__menu-item task-card__menu-item--delete"
+                    data-task-id="${this.task.id}"
+                    type="button">
+                <svg class="task-card__menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Remover
+            </button>
+        `;
+
+        actionsContainer.appendChild(menuButton);
+        actionsContainer.appendChild(menu);
+        this.contentWrapper.appendChild(actionsContainer);
+
+        // Adicionar listener para toggle do menu
+        menuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleMenu();
+        });
+    }
+
+    /**
      * Adiciona os event listeners necessários
      */
     addEventListeners() {
@@ -212,10 +271,17 @@ export class TaskCard {
         this.element.addEventListener('mouseenter', this.handleMouseEnter);
         this.element.addEventListener('mouseleave', this.handleMouseLeave);
 
-        // Listener para clique no card (exceto checkbox)
+        // Listener para clique no card (exceto checkbox e menu)
         this.element.addEventListener('click', (e) => {
+            const menuButton = this.element.querySelector('.task-card__menu-button');
+            const menu = this.element.querySelector('.task-card__menu');
+
             if (e.target !== this.checkboxElement &&
-                !this.checkboxElement.contains(e.target)) {
+                !this.checkboxElement.contains(e.target) &&
+                e.target !== menuButton &&
+                !menuButton.contains(e.target) &&
+                e.target !== menu &&
+                !menu.contains(e.target)) {
                 this.handleCardClick();
             }
         });
@@ -301,6 +367,55 @@ export class TaskCard {
             logger.error('Failed to toggle task completion:', error);
             console.error('Failed to toggle task completion:', error);
         }
+    }
+
+    /**
+     * Alterna a visibilidade do menu de ações
+     */
+    toggleMenu() {
+        const menu = this.element.querySelector('.task-card__menu');
+        const menuButton = this.element.querySelector('.task-card__menu-button');
+
+        if (!menu || !menuButton) return;
+
+        // Fechar outros menus primeiro
+        TaskCard.closeAllMenus();
+
+        // Toggle do menu atual
+        const isOpen = menu.classList.contains('task-card__menu--open');
+
+        if (!isOpen) {
+            menu.classList.add('task-card__menu--open');
+            menuButton.setAttribute('aria-expanded', 'true');
+        } else {
+            menu.classList.remove('task-card__menu--open');
+            menuButton.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    /**
+     * Fecha o menu de ações
+     */
+    closeMenu() {
+        const menu = this.element.querySelector('.task-card__menu');
+        const menuButton = this.element.querySelector('.task-card__menu-button');
+
+        if (menu && menuButton) {
+            menu.classList.remove('task-card__menu--open');
+            menuButton.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    /**
+     * Fecha todos os menus de ações na página
+     */
+    static closeAllMenus() {
+        document.querySelectorAll('.task-card__menu--open').forEach(menu => {
+            menu.classList.remove('task-card__menu--open');
+        });
+        document.querySelectorAll('.task-card__menu-button').forEach(button => {
+            button.setAttribute('aria-expanded', 'false');
+        });
     }
 
     /**

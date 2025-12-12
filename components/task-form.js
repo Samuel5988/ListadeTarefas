@@ -332,7 +332,8 @@ export class TaskForm {
                 setTimeout(() => {
                     this.close();
 
-                    // Disparar evento de criação APÓS fechar o modal para evitar race condition
+                    // Disparar evento de criação - o app.js cuidará de atualizar o estado
+                    // para evitar atualizações duplas que causam duplicatas
                     setTimeout(() => {
                         window.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_CREATED, {
                             detail: { task: newTask }
