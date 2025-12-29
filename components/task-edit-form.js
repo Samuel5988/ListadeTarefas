@@ -18,7 +18,7 @@ export class TaskEditForm {
         this.isOpen = false;
         this.currentTaskId = null;
         this.originalBodyOverflow = '';
-        this.categories = ['Tarefas', 'Pessoal', 'Trabalho', 'Estudo', 'Outros'];
+        this.categories = ['Tarefas']; // Valor inicial padrão
 
         // Bind de métodos
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -27,11 +27,69 @@ export class TaskEditForm {
     }
 
     /**
+     * Carrega categorias do AppState
+     */
+    async loadCategories() {
+        try {
+            // Carregar categorias do AppState
+            if (window.appState) {
+                this.categories = window.appState.getCategoriesFromState();
+                logger.info('Categories loaded from AppState:', this.categories);
+            } else {
+                logger.warn('AppState not available, using default categories');
+            }
+        } catch (error) {
+            logger.warn('Failed to load categories from AppState, using defaults', error);
+        }
+    }
+
+    /**
+     * Atualiza o select de categorias no formulário
+     */
+    updateCategorySelect() {
+        const categorySelect = this.formElement.querySelector('#edit-task-category');
+        if (categorySelect && this.categories) {
+            // Salvar valor atual selecionado
+            const currentValue = categorySelect.value;
+
+            // Limpar opções existentes
+            categorySelect.innerHTML = '';
+
+            // Adicionar novas opções
+            this.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+
+            // Restaurar valor selecionado se ainda existir
+            if (this.categories.includes(currentValue)) {
+                categorySelect.value = currentValue;
+            }
+
+            logger.info('Category select updated:', {
+                newOptionsCount: categorySelect.options.length,
+                options: Array.from(categorySelect.options).map(opt => ({ value: opt.value, text: opt.text }))
+            });
+        } else {
+            logger.warn('Cannot update category select:', {
+                hasSelect: !!categorySelect,
+                hasCategories: !!this.categories,
+                categories: this.categories
+            });
+        }
+    }
+
+    /**
      * Abre o modal de edição com os dados da tarefa
      * @param {string} taskId - ID da tarefa a ser editada
      */
     async open(taskId) {
         try {
+            // Carregar categorias do AppState antes de abrir
+            await this.loadCategories();
+
             // Buscar tarefa do storage
             const tasks = await taskStorage.getAll();
             const task = tasks.find(t => t.id === taskId);
@@ -47,6 +105,9 @@ export class TaskEditForm {
             if (!this.modalElement) {
                 this.createModal();
             }
+
+            // Atualizar o select de categorias com as categorias carregadas
+            this.updateCategorySelect();
 
             // Preencher formulário com dados da tarefa
             this.populateForm(task);
@@ -117,9 +178,7 @@ export class TaskEditForm {
                         <div class="task-edit-form__field">
                             <label for="edit-task-category" class="task-edit-form__label">Categoria</label>
                             <select id="edit-task-category" name="category" class="task-edit-form__select">
-                                ${this.categories.map(cat => `
-                                    <option value="${cat}">${cat}</option>
-                                `).join('')}
+                                <!-- Categorias serão carregadas dinamicamente do AppState -->
                             </select>
                         </div>
 

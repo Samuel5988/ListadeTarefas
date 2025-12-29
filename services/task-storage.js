@@ -67,14 +67,29 @@ class TaskStorage {
                 return [];
             }
 
+            // DEBUG: Verificar storage
             const data = localStorage.getItem(this.config.key);
+            logger.info('getAll: Raw data from localStorage:', {
+                hasData: !!data,
+                dataLength: data ? data.length : 0
+            });
+
             if (!data) {
                 logger.debug('No tasks found in storage');
                 return [];
             }
 
             const parsed = JSON.parse(data);
+            logger.info('getAll: Parsed data:', {
+                taskCount: parsed.tasks ? parsed.tasks.length : 0,
+                tasks: parsed.tasks ? parsed.tasks.map(t => ({ id: t.id, title: t.title, category: t.category })) : []
+            });
+
             const tasks = this.validateAndClean(parsed.tasks || []);
+            logger.info('getAll: After validateAndClean:', {
+                count: tasks.length,
+                tasks: tasks.map(t => ({ id: t.id, title: t.title, category: t.category }))
+            });
 
             // Atualizar cache
             this.setCache('all', tasks);
@@ -99,8 +114,19 @@ class TaskStorage {
                 return false;
             }
 
+            // DEBUG: Log antes de salvar
+            logger.info('saveAll called with tasks:', {
+                count: tasks.length,
+                tasks: tasks.map(t => ({ id: t.id, title: t.title, category: t.category }))
+            });
+
             // Validar tarefas antes de salvar
             const validTasks = this.validateAndClean(tasks);
+            logger.info('After validateAndClean:', {
+                count: validTasks.length,
+                tasks: validTasks.map(t => ({ id: t.id, title: t.title, category: t.category }))
+            });
+
             const data = {
                 tasks: validTasks,
                 version: this.config.version,
@@ -109,6 +135,14 @@ class TaskStorage {
 
             await this.retryOperation(() => {
                 localStorage.setItem(this.config.key, JSON.stringify(data));
+            });
+
+            // DEBUG: Verificar se foi salvo corretamente
+            const savedData = localStorage.getItem(this.config.key);
+            const parsedData = JSON.parse(savedData);
+            logger.info('Data saved to localStorage:', {
+                taskCount: parsedData.tasks.length,
+                tasks: parsedData.tasks.map(t => ({ id: t.id, title: t.title, category: t.category }))
             });
 
             // Limpar cache para forçar recarga
@@ -134,6 +168,13 @@ class TaskStorage {
             const tasks = await this.getAll();
             logger.info('Current tasks before addition', { count: tasks.length, taskIds: tasks.map(t => t.id) });
 
+            // DEBUG: Log da tarefa recebida
+            logger.info('TaskStorage.add called with:', {
+                task: task,
+                taskCategory: task.category,
+                hasCategory: 'category' in task
+            });
+
             const newTask = {
                 id: task.id || this.generateId(),
                 title: task.title,
@@ -141,11 +182,18 @@ class TaskStorage {
                 completed: false,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                category: task.category || 'default',
+                category: task.category || 'Tarefas', // Usar 'Tarefas' como padrão
                 priority: task.priority || 'medium',
                 dueDate: task.dueDate || null,
-                ...task,
             };
+
+            // Não usar spread operator para evitar sobrescrever campos importantes
+            // Apenas mesclar campos explícitos que não conflitam
+            if (task.completed !== undefined) newTask.completed = task.completed;
+            if (task.category !== undefined) newTask.category = task.category;
+            if (task.priority !== undefined) newTask.priority = task.priority;
+
+            logger.info('TaskStorage.add final task object:', newTask);
 
             tasks.push(newTask);
             logger.info('Tasks after push', { count: tasks.length, taskIds: tasks.map(t => t.id) });
@@ -338,8 +386,6 @@ class TaskStorage {
             return [];
         }
 
-        const validCategories = ['Tarefas', 'Pessoal', 'Trabalho', 'Estudo', 'Outros'];
-
         return tasks
             .filter(task => task && typeof task === 'object')
             .map(task => {
@@ -364,7 +410,8 @@ class TaskStorage {
                     completed: Boolean(task.completed),
                     createdAt: task.createdAt || new Date().toISOString(),
                     updatedAt: task.updatedAt || new Date().toISOString(),
-                    category: validCategories.includes(category) ? category : 'Tarefas',
+                    // Aceitar qualquer categoria (não restringir a lista hardcoded)
+                    category: category || 'Tarefas',
                     priority: normalizedPriority,
                     dueDate: task.dueDate || null,
                 };

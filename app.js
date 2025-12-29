@@ -13,6 +13,7 @@ import { TaskCard } from './components/task-card.js';
 import { taskForm } from './components/task-form.js';
 import { TaskEditForm } from './components/task-edit-form.js';
 import { ConfirmDialog } from './components/confirm-dialog.js';
+import { CategorySidebar } from './components/category-sidebar.js';
 
 /**
  * Classe principal da aplicação
@@ -81,6 +82,9 @@ class TaskApp {
     async handleDOMLoaded() {
         try {
             logger.info('DOM loaded, setting up application...');
+
+            // Expor appState globalmente ANTES de inicializar componentes
+            window.appState = appState;
 
             // Aguardar estado estar inicializado
             await this.waitForStateInitialization();
@@ -181,6 +185,9 @@ class TaskApp {
         this.taskEditForm = new TaskEditForm();
         this.confirmDialog = new ConfirmDialog();
 
+        // Inicializar Category Sidebar
+        this.initializeCategorySidebar();
+
         // Renderizar tarefas existentes
         this.renderTasks();
 
@@ -240,6 +247,38 @@ class TaskApp {
     }
 
     /**
+     * Inicializa a Category Sidebar
+     */
+    initializeCategorySidebar() {
+        try {
+            logger.info('Initializing CategorySidebar...');
+
+            // Criar container para a sidebar
+            const sidebarContainer = document.querySelector('.category-sidebar-container') || document.createElement('div');
+            sidebarContainer.className = 'category-sidebar-container';
+
+            // Inserir sidebar antes do main container
+            const mainContainer = document.querySelector('.max-w-7xl') || document.querySelector('main');
+            if (mainContainer) {
+                mainContainer.parentNode.insertBefore(sidebarContainer, mainContainer);
+            } else {
+                document.body.appendChild(sidebarContainer);
+            }
+
+            // Inicializar a sidebar
+            this.categorySidebar = new CategorySidebar(sidebarContainer);
+            this.categorySidebar.render();
+
+            // Armazenar referência
+            this.components.set('categorySidebar', this.categorySidebar);
+
+            logger.info('CategorySidebar initialized successfully');
+        } catch (error) {
+            logger.error('Failed to initialize CategorySidebar', error);
+        }
+    }
+
+    /**
      * Adiciona event listeners globais
      */
     addGlobalEventListeners() {
@@ -248,6 +287,27 @@ class TaskApp {
         window.addEventListener(STATE_EVENTS.TASK_UPDATED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.TASK_COMPLETED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.THEME_CHANGED, this.handleThemeChange);
+
+        // Eventos da Category Sidebar
+        window.addEventListener(STATE_EVENTS.CATEGORIES_CHANGED, () => {
+            if (this.categorySidebar) {
+                this.categorySidebar.update();
+            }
+        });
+
+        window.addEventListener(STATE_EVENTS.FILTER_CHANGED, () => {
+            if (this.categorySidebar) {
+                this.categorySidebar.updateActiveFilter();
+            }
+            // Re-renderizar tarefas com o novo filtro aplicado
+            this.renderTasks();
+        });
+
+        window.addEventListener(STATE_EVENTS.TASKS_CHANGED, () => {
+            if (this.categorySidebar) {
+                this.categorySidebar.update();
+            }
+        });
 
         // Eventos de storage (para sincronização entre abas)
         window.addEventListener('storage', (e) => {
@@ -274,7 +334,8 @@ class TaskApp {
      */
     renderTasks() {
         try {
-            const tasks = appState.getState('tasks');
+            // Usar getFilteredTasks para respeitar os filtros ativos (incluindo categoria)
+            const tasks = appState.getFilteredTasks();
             const container = document.querySelector('main .grid');
 
             // Store cleanup function references

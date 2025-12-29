@@ -17,7 +17,7 @@ export class TaskForm {
         this.formElement = null;
         this.fabElement = null;
         this.isOpen = false;
-        this.categories = ['Tarefas', 'Pessoal', 'Trabalho', 'Estudo', 'Outros'];
+        this.categories = ['Tarefas']; // Valor inicial padrão
         this.originalBodyOverflow = '';
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleKeydown = this.handleKeydown.bind(this);
@@ -188,18 +188,67 @@ export class TaskForm {
      */
     async loadCategories() {
         try {
-            // TODO: Implementar carregamento dinâmico quando Categories for implementado
-            // Por enquanto, usa as categorias padrão
+            // Carregar categorias do AppState
+            if (window.appState) {
+                this.categories = window.appState.getCategoriesFromState();
+                logger.info('Categories loaded from AppState:', this.categories);
+            } else {
+                logger.warn('AppState not available, using default categories');
+            }
         } catch (error) {
-            logger.warn('Failed to load categories', error);
+            logger.warn('Failed to load categories from AppState, using defaults', error);
+        }
+    }
+
+    /**
+     * Atualiza o select de categorias no formulário
+     */
+    updateCategorySelect() {
+        const categorySelect = this.formElement.querySelector('#task-category');
+        if (categorySelect && this.categories) {
+            // DEBUG: Log antes de atualizar
+            logger.info('Updating category select with:', {
+                currentCategories: this.categories,
+                selectElement: !!categorySelect,
+                currentOptions: categorySelect.options.length
+            });
+
+            // Limpar opções existentes
+            categorySelect.innerHTML = '';
+
+            // Adicionar novas opções
+            this.categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+
+            // DEBUG: Log após atualizar
+            logger.info('Category select updated:', {
+                newOptionsCount: categorySelect.options.length,
+                options: Array.from(categorySelect.options).map(opt => ({ value: opt.value, text: opt.text }))
+            });
+        } else {
+            logger.warn('Cannot update category select:', {
+                hasSelect: !!categorySelect,
+                hasCategories: !!this.categories,
+                categories: this.categories
+            });
         }
     }
 
     /**
      * Abre o modal
      */
-    open() {
+    async open() {
         if (this.isOpen) return;
+
+        // Recarregar categorias antes de abrir
+        await this.loadCategories();
+
+        // Atualizar o select de categorias no formulário
+        this.updateCategorySelect();
 
         this.isOpen = true;
         this.modalElement.classList.add('task-form__overlay--open');
@@ -289,9 +338,22 @@ export class TaskForm {
             const priority = formData.get('priority');
             const dueDate = formData.get('dueDate') || null;
 
+            // DEBUG: Log para verificar os dados
+            logger.info('Form data extracted:', {
+                title,
+                description,
+                category,
+                priority,
+                availableCategories: this.categories,
+                categoryExists: this.categories.includes(category)
+            });
+
             // Validação adicional de categoria
-            const validCategories = ['Tarefas', 'Pessoal', 'Trabalho', 'Estudo', 'Outros'];
-            if (!validCategories.includes(category)) {
+            if (!this.categories.includes(category)) {
+                logger.error('Category validation failed:', {
+                    selectedCategory: category,
+                    availableCategories: this.categories
+                });
                 this.showFieldError('task-category', 'Categoria inválida');
                 return;
             }
@@ -306,7 +368,7 @@ export class TaskForm {
             const taskData = {
                 title,
                 description,
-                category,
+                category: category || 'Tarefas', // Garantir que sempre tenha categoria
                 priority,
                 dueDate,
             };

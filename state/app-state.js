@@ -16,6 +16,7 @@ export const STATE_EVENTS = {
     TASKS_LOADED: 'tasks:loaded',
     FILTER_CHANGED: 'filter:changed',
     THEME_CHANGED: 'theme:changed',
+    CATEGORIES_CHANGED: 'categories:changed',
     STATE_RESET: 'state:reset',
 };
 
@@ -383,6 +384,13 @@ class AppState {
     updateFilter(filters) {
         const currentFilter = this.getState('filter');
         const newFilter = { ...currentFilter, ...filters };
+
+        // DEBUG: Log das mudanças de filtro
+        logger.info('updateFilter called:', {
+            previousFilter: currentFilter,
+            newFilters: filters,
+            resultingFilter: newFilter
+        });
 
         this.update({ filter: newFilter });
         this.dispatch(STATE_EVENTS.FILTER_CHANGED, newFilter);
@@ -925,6 +933,8 @@ class AppState {
                     sidebarOpen: this.state.ui.sidebarOpen,
                 },
                 settings: this.state.settings,
+                // Salvar categorias para persistência
+                categories: this.state.categories,
                 lastSaved: new Date().toISOString(),
             };
 
@@ -1021,16 +1031,35 @@ class AppState {
     getFilteredTasks() {
         const { tasks, filter } = this.state;
 
-        return tasks.filter(task => {
+        // DEBUG: Log do estado atual
+        logger.info('getFilteredTasks called:', {
+            totalTasks: tasks.length,
+            currentFilter: filter,
+            tasksWithCategories: tasks.map(t => ({ title: t.title, category: t.category }))
+        });
+
+        const filteredTasks = tasks.filter(task => {
             // Filtro por status
-            if (filter.status === 'active' && task.completed) return false;
-            if (filter.status === 'completed' && !task.completed) return false;
+            if (filter.status === 'active' && task.completed) {
+                logger.debug(`Task "${task.title}" filtered out: completed but filter is active`);
+                return false;
+            }
+            if (filter.status === 'completed' && !task.completed) {
+                logger.debug(`Task "${task.title}" filtered out: not completed but filter is completed`);
+                return false;
+            }
 
             // Filtro por categoria
-            if (filter.category !== 'all' && task.category !== filter.category) return false;
+            if (filter.category !== 'all' && task.category !== filter.category) {
+                logger.debug(`Task "${task.title}" filtered out: category "${task.category}" != filter "${filter.category}"`);
+                return false;
+            }
 
             // Filtro por prioridade
-            if (filter.priority !== 'all' && task.priority !== filter.priority) return false;
+            if (filter.priority !== 'all' && task.priority !== filter.priority) {
+                logger.debug(`Task "${task.title}" filtered out: priority mismatch`);
+                return false;
+            }
 
             // Filtro por termo de busca
             if (filter.searchTerm) {
@@ -1038,11 +1067,19 @@ class AppState {
                 const titleMatch = task.title.toLowerCase().includes(searchTerm);
                 const descriptionMatch = task.description.toLowerCase().includes(searchTerm);
 
-                if (!titleMatch && !descriptionMatch) return false;
+                if (!titleMatch && !descriptionMatch) {
+                    logger.debug(`Task "${task.title}" filtered out: search term not found`);
+                    return false;
+                }
             }
 
+            logger.debug(`Task "${task.title}" passed all filters`);
             return true;
         });
+
+        logger.info(`getFilteredTasks result: ${filteredTasks.length} tasks passed filter`);
+
+        return filteredTasks;
     }
 
     /**
