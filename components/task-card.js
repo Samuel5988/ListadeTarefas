@@ -53,6 +53,10 @@ export class TaskCard {
         this.handleCheckboxChange = this.handleCheckboxChange.bind(this);
         this.handleMouseEnter = this.handleMouseEnter.bind(this);
         this.handleMouseLeave = this.handleMouseLeave.bind(this);
+        this.handleReminderActivated = this.handleReminderActivated.bind(this);
+
+        // Listener global para lembretes ativos (bound para remover depois)
+        this.reminderActivatedBound = this.handleReminderActivated.bind(this);
 
         logger.debug('TaskCard created', { taskId: this.task.id });
     }
@@ -453,6 +457,18 @@ export class TaskCard {
     }
 
     /**
+     * Manipula ativação de lembrete
+     */
+    handleReminderActivated(e) {
+        if (e.detail.taskId === this.task.id) {
+            if (this.task.dueDate && !this.task.completed) {
+                this.element.classList.add('task-card--reminder-active');
+                logger.info('Reminder activated visually', { taskId: this.task.id });
+            }
+        }
+    }
+
+    /**
      * Adiciona os event listeners necessários
      */
     addEventListeners() {
@@ -494,6 +510,9 @@ export class TaskCard {
             e.stopPropagation();
             this.dispatch('task:delete', { taskId: this.task.id });
         });
+
+        // Listener para ativação de lembrete (evento global)
+        window.addEventListener('reminder:activated', this.reminderActivatedBound);
     }
 
     /**
@@ -553,6 +572,15 @@ export class TaskCard {
             if (updatedTask) {
                 // Atualizar dados locais
                 this.task = updatedTask;
+
+                // Remover destaque de lembrete se marcado como completed
+                if (newCompletedState) {
+                    this.element.classList.remove('task-card--reminder-active');
+                    // Notificar ReminderChecker para parar de tracking
+                    window.dispatchEvent(new CustomEvent('reminder:untrack', {
+                        detail: { taskId: this.task.id }
+                    }));
+                }
 
                 // Atualizar UI
                 this.updateUI();
@@ -689,6 +717,11 @@ export class TaskCard {
         if (this.element) {
             this.element.removeEventListener('mouseenter', this.handleMouseEnter);
             this.element.removeEventListener('mouseleave', this.handleMouseLeave);
+        }
+
+        // Remover listener global de lembretes
+        if (this.reminderActivatedBound) {
+            window.removeEventListener('reminder:activated', this.reminderActivatedBound);
         }
 
         // Limpar referências

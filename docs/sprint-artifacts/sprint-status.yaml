@@ -63,8 +63,8 @@ development_status:
 
   # Epic 4: Lembretes e Notificações
   epic-4: in-progress
-  4-1-configuracao-de-lembretes: review
-  4-2-notificacoes-visuais-de-lembretes: backlog
+  4-1-configuracao-de-lembretes: done
+  4-2-notificacoes-visuais-de-lembretes: done
   4-3-filtro-de-tarefas-com-lembretes: backlog
   4-4-adiamento-de-lembretes: backlog
   epic-4-retrospective: optional

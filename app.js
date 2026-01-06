@@ -8,6 +8,7 @@
 import { logger } from './utils/logger.js';
 import { appState, STATE_EVENTS } from './state/app-state.js';
 import { taskStorage } from './services/task-storage.js';
+import { reminderChecker } from './services/reminder-checker.js';
 import { ThemeManager } from './components/theme-manager.js';
 import { TaskCard } from './components/task-card.js';
 import { taskForm } from './components/task-form.js';
@@ -191,6 +192,9 @@ class TaskApp {
         // Inicializar Category Sidebar
         this.initializeCategorySidebar();
 
+        // Inicializar ReminderChecker
+        this.initializeReminderChecker();
+
         // Renderizar tarefas existentes
         this.renderTasks();
 
@@ -331,6 +335,93 @@ class TaskApp {
             logger.info('CategorySidebar initialized successfully');
         } catch (error) {
             logger.error('Failed to initialize CategorySidebar', error);
+        }
+    }
+
+    /**
+     * Inicializa o ReminderChecker
+     */
+    initializeReminderChecker() {
+        try {
+            logger.info('Initializing ReminderChecker...');
+
+            // Iniciar verificação periódica
+            reminderChecker.start();
+
+            // Adicionar contador no header
+            this.setupReminderCounter();
+
+            // Armazenar referência
+            this.components.set('reminderChecker', reminderChecker);
+
+            logger.info('ReminderChecker initialized successfully');
+        } catch (error) {
+            logger.error('Failed to initialize ReminderChecker', error);
+        }
+    }
+
+    /**
+     * Configura contador de lembretes no header
+     */
+    setupReminderCounter() {
+        // Criar elemento do contador
+        const counter = document.createElement('div');
+        counter.id = 'reminder-counter';
+        counter.className = 'reminder-counter';
+        counter.innerHTML = `
+            <svg class="reminder-counter__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="reminder-counter__text">0 lembretes hoje</span>
+        `;
+
+        // Adicionar ao header
+        const reminderContainer = document.getElementById('reminder-counter-container');
+        if (reminderContainer) {
+            reminderContainer.appendChild(counter);
+        } else {
+            // Fallback: adicionar após sort toggle
+            const sortContainer = document.getElementById('sort-toggle-container');
+            if (sortContainer && sortContainer.parentNode) {
+                sortContainer.parentNode.insertBefore(counter, sortContainer.nextSibling);
+            }
+        }
+
+        // Listener para atualização do contador
+        window.addEventListener('reminder:count-update', (e) => {
+            this.updateReminderCounter(e.detail.count);
+        });
+
+        // Listener para untrack de lembretes (quando tarefa é completada)
+        window.addEventListener('reminder:untrack', (e) => {
+            if (reminderChecker.untrackReminder) {
+                reminderChecker.untrackReminder(e.detail.taskId);
+            }
+        });
+
+        // Atualizar contador inicial
+        reminderChecker.checkReminders();
+    }
+
+    /**
+     * Atualiza contador de lembretes
+     */
+    updateReminderCounter(count) {
+        const counterText = document.querySelector('.reminder-counter__text');
+        if (counterText) {
+            if (count === 0) {
+                counterText.textContent = 'Nenhum lembrete hoje';
+            } else if (count === 1) {
+                counterText.textContent = '1 lembrete hoje';
+            } else {
+                counterText.textContent = `${count} lembretes hoje`;
+            }
+        }
+
+        // Highlight se houver lembretes
+        const counter = document.getElementById('reminder-counter');
+        if (counter) {
+            counter.classList.toggle('reminder-counter--active', count > 0);
         }
     }
 
@@ -872,6 +963,11 @@ class TaskApp {
         if (this.themeManager) {
             this.themeManager.destroy();
             this.themeManager = null;
+        }
+
+        // Para ReminderChecker se existir
+        if (this.components.has('reminderChecker')) {
+            this.components.get('reminderChecker').stop();
         }
 
         // Remover event listeners

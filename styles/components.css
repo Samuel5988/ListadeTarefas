@@ -524,6 +524,58 @@
     color: #f5c6cb;
 }
 
+/* Reminder Active State */
+.task-card--reminder-active {
+    border: 2px solid #ffc107 !important;
+    animation: reminder-pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 0 rgba(255, 193, 7, 0.4);
+    transition: all 0.3s ease;
+}
+
+@keyframes reminder-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 193, 7, 0);
+    }
+}
+
+/* Ícone pulsante para lembretes ativos */
+.task-card--reminder-active .task-card__due-date-icon {
+    animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Dark mode adjustments for reminder active */
+[data-theme="dark"] .task-card--reminder-active {
+    border-color: #ffca2c !important;
+    box-shadow: 0 0 0 rgba(255, 202, 44, 0.3);
+}
+
+@keyframes reminder-pulse-dark {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 202, 44, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 202, 44, 0);
+    }
+}
+
+[data-theme="dark"] .task-card--reminder-active {
+    animation: reminder-pulse-dark 2s ease-in-out infinite;
+}
+
 /* Task Card Animations */
 @keyframes task-card-check {
     0% {
@@ -1232,4 +1284,41 @@
 
 .sort-toggle__text {
     white-space: nowrap;
+}
+
+/* Reminder Counter */
+.reminder-counter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.reminder-counter--active {
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: 500;
+}
+
+.reminder-counter__icon {
+    flex-shrink: 0;
+}
+
+.reminder-counter--active .reminder-counter__icon {
+    animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+[data-theme="dark"] .reminder-counter {
+    background-color: #495057;
+    color: #ced4da;
+}
+
+[data-theme="dark"] .reminder-counter--active {
+    background-color: #664d03;
+    color: #ffca2c;
 }
