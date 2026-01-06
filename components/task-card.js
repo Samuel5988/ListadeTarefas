@@ -94,7 +94,7 @@ export class TaskCard {
         this.element.classList.remove(
             'task-card--completed',
             'task-card--not-completed',
-            Object.values(PRIORITY_CLASSES)
+            ...Object.values(PRIORITY_CLASSES)
         );
 
         // Adicionar classe de conclusão
@@ -141,10 +141,14 @@ export class TaskCard {
 
         this.contentWrapper.appendChild(mainContent);
 
+        // Adicionar contentWrapper ao DOM PRIMEIRO
+        this.element.appendChild(this.contentWrapper);
+
+        // CRIAR PRIORITY INDICATOR DEPOIS (agora contentWrapper já é filho de this.element)
+        this.createPriorityIndicator();
+
         // Criar menu de ações
         this.createActionMenu();
-
-        this.element.appendChild(this.contentWrapper);
     }
 
     /**
@@ -201,6 +205,161 @@ export class TaskCard {
         this.categoryBadgeElement.className = 'task-card__category-badge';
         this.categoryBadgeElement.textContent = this.task.category;
         parent.appendChild(this.categoryBadgeElement);
+    }
+
+    /**
+     * Cria o indicador de prioridade clicável (borda esquerda)
+     */
+    createPriorityIndicator() {
+        const priorityIndicator = document.createElement('div');
+        priorityIndicator.className = 'task-card__priority-indicator';
+
+        // CORREÇÃO: Adicionar cor inline imediatamente para garantir que apareça no carregamento
+        const priorityColor = PRIORITY_COLORS[this.task.priority] || PRIORITY_COLORS.medium;
+        priorityIndicator.style.backgroundColor = priorityColor;
+
+        priorityIndicator.setAttribute('role', 'button');
+        priorityIndicator.setAttribute('aria-label', `Prioridade ${this.getPriorityLabel(this.task.priority)}, clique para alterar para ${this.getNextPriorityLabel(this.task.priority)}`);
+        priorityIndicator.setAttribute('title', `Clique para alterar prioridade (atual: ${this.getPriorityLabel(this.task.priority)})`);
+
+        // Adicionar tooltip visual no hover
+        priorityIndicator.addEventListener('mouseenter', () => {
+            priorityIndicator.setAttribute('title', `Clique para: ${this.getNextPriorityLabel(this.task.priority)}`);
+        });
+
+        // Click handler para ciclar prioridade
+        const handlePriorityClick = (e) => {
+            e.stopPropagation(); // Prevenir outros eventos do card
+            e.preventDefault(); // Prevenir comportamento padrão em touch
+            this.cyclePriority();
+        };
+
+        // Suporta tanto mouse click quanto touch/pointer events
+        priorityIndicator.addEventListener('click', handlePriorityClick);
+        priorityIndicator.addEventListener('pointerdown', (e) => {
+            // Melhor responsividade em dispositivos touch
+            if (e.pointerType === 'touch') {
+                handlePriorityClick(e);
+            }
+        });
+
+        // Inserir antes do conteúdo
+        this.element.insertBefore(priorityIndicator, this.contentWrapper);
+
+        // Adicionar classe ao card para remover borda padrão
+        this.element.classList.add('task-card--with-priority-indicator');
+    }
+
+    /**
+     * Cicla entre prioridades: low → medium → high → low
+     * @returns {Promise<string>} Nova prioridade aplicada
+     */
+    async cyclePriority() {
+        const priorityCycle = {
+            'low': 'medium',
+            'medium': 'high',
+            'high': 'low'
+        };
+
+        const currentPriority = this.task.priority || 'medium';
+        const newPriority = priorityCycle[currentPriority] || 'medium';
+
+        try {
+            // Atualizar no storage
+            const updatedTask = await taskStorage.update(this.task.id, {
+                priority: newPriority
+            });
+
+            if (updatedTask) {
+                // Atualizar dados locais
+                const oldPriority = this.task.priority;
+                this.task = updatedTask;
+
+                // Atualizar UI
+                this.updatePriorityUI(oldPriority, newPriority);
+
+                // Disparar evento para AppState
+                this.dispatch('task:priority-changed', {
+                    taskId: this.task.id,
+                    oldPriority,
+                    newPriority
+                });
+
+                logger.info('Task priority cycled', {
+                    taskId: this.task.id,
+                    oldPriority,
+                    newPriority
+                });
+
+                return newPriority;
+            }
+        } catch (error) {
+            logger.error('Failed to cycle task priority:', error);
+            console.error('Failed to cycle task priority:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Atualiza apenas a UI de prioridade com transição suave
+     * @param {string} oldPriority - Prioridade anterior
+     * @param {string} newPriority - Nova prioridade
+     */
+    updatePriorityUI(oldPriority, newPriority) {
+        if (!this.element) return;
+
+        // Remover classe antiga com transição
+        const oldClass = PRIORITY_CLASSES[oldPriority];
+        const newClass = PRIORITY_CLASSES[newPriority];
+
+        if (oldClass) {
+            this.element.classList.remove(oldClass);
+        }
+
+        if (newClass) {
+            this.element.classList.add(newClass);
+        }
+
+        // Atualizar aria-label do indicador com próxima prioridade
+        const priorityIndicator = this.element.querySelector('.task-card__priority-indicator');
+        if (priorityIndicator) {
+            const currentLabel = this.getPriorityLabel(newPriority);
+            const nextLabel = this.getNextPriorityLabel(newPriority);
+            priorityIndicator.setAttribute('aria-label', `Prioridade ${currentLabel}, clique para alterar para ${nextLabel}`);
+            priorityIndicator.setAttribute('title', `Clique para alterar prioridade (atual: ${currentLabel})`);
+
+            // CORREÇÃO: Atualizar cor inline imediatamente
+            const newColor = PRIORITY_COLORS[newPriority] || PRIORITY_COLORS.medium;
+            priorityIndicator.style.backgroundColor = newColor;
+        }
+    }
+
+    /**
+     * Retorna label amigável da prioridade
+     * @param {string} priority - Valor da prioridade
+     * @returns {string} Label em português
+     */
+    getPriorityLabel(priority) {
+        const labels = {
+            'low': 'Baixa',
+            'medium': 'Média',
+            'high': 'Alta'
+        };
+        return labels[priority] || 'Média';
+    }
+
+    /**
+     * Retorna label da próxima prioridade no ciclo
+     * @param {string} currentPriority - Prioridade atual
+     * @returns {string} Label da próxima prioridade
+     */
+    getNextPriorityLabel(currentPriority) {
+        const nextPriority = {
+            'low': 'Média',
+            'medium': 'Alta',
+            'high': 'Baixa'
+        };
+        return nextPriority[currentPriority] || 'Média';
     }
 
     /**
@@ -264,24 +423,32 @@ export class TaskCard {
     addEventListeners() {
         if (!this.element) return;
 
-        // Listener para checkbox
+        // Listener para checkbox com stopPropagation para prevenir duplo toggle
         this.checkboxElement.addEventListener('change', this.handleCheckboxChange);
+
+        // Listener para clique no checkbox para prevenir bubbling para o card
+        this.checkboxElement.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevenir que click chegue no card listener
+        });
 
         // Listeners para hover
         this.element.addEventListener('mouseenter', this.handleMouseEnter);
         this.element.addEventListener('mouseleave', this.handleMouseLeave);
 
-        // Listener para clique no card (exceto checkbox e menu)
+        // Listener para clique no card (exceto checkbox, menu E priority indicator)
         this.element.addEventListener('click', (e) => {
             const menuButton = this.element.querySelector('.task-card__menu-button');
             const menu = this.element.querySelector('.task-card__menu');
+            const priorityIndicator = this.element.querySelector('.task-card__priority-indicator');
 
             if (e.target !== this.checkboxElement &&
                 !this.checkboxElement.contains(e.target) &&
                 e.target !== menuButton &&
                 !menuButton.contains(e.target) &&
                 e.target !== menu &&
-                !menu.contains(e.target)) {
+                !menu.contains(e.target) &&
+                e.target !== priorityIndicator &&
+                !priorityIndicator?.contains(e.target)) {
                 this.handleCardClick();
             }
         });

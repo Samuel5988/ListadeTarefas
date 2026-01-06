@@ -279,6 +279,7 @@
 
 /* Task Card Component */
 .task-card {
+    position: relative; /* NECESSÁRIO para position:absolute do priority-indicator funcionar */
     background-color: var(--gray-1);
     border: var(--border-width) solid var(--gray-3);
     border-radius: var(--border-radius-md);
@@ -333,6 +334,46 @@
 
 .task-card--priority-low {
     border-left: 4px solid #28a745;
+    transition: border-left-color 0.3s ease;
+}
+
+/* Indicador de prioridade clicável */
+.task-card__priority-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: pointer;
+    transition: width 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+    border-radius: 4px 0 0 4px;
+    z-index: 1; /* Garantir que fique visível acima do conteúdo */
+}
+
+.task-card__priority-indicator:hover {
+    width: 8px;
+    opacity: 0.8;
+}
+
+/* Cores do indicador de prioridade com transição suave */
+.task-card--priority-high .task-card__priority-indicator {
+    background-color: #dc3545;
+    transition: background-color 0.3s ease;
+}
+
+.task-card--priority-medium .task-card__priority-indicator {
+    background-color: #ffc107;
+    transition: background-color 0.3s ease;
+}
+
+.task-card--priority-low .task-card__priority-indicator {
+    background-color: #28a745;
+    transition: background-color 0.3s ease;
+}
+
+/* Quando indicador customizado está presente, remover borda padrão */
+.task-card--with-priority-indicator {
+    border-left: none;
 }
 
 .task-card__content-wrapper {

@@ -29,7 +29,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-12-06
+generated: 2026-01-06
 project: ListadeTarefas
 project_key: LISTA-001
 tracking_system: file-system
@@ -58,7 +58,7 @@ development_status:
   3-1-sistema-de-categorias: done
   3-2-associacao-de-tarefas-a-categorias: replaced
   3-3-sistema-de-prioridades-visuais: done
-  3-4-modificacao-visual-de-prioridades: backlog
+  3-4-modificacao-visual-de-prioridades: done
   epic-3-retrospective: optional
 
   # Epic 4: Lembretes e Notificações

@@ -404,6 +404,30 @@ class TaskApp {
             }
         });
 
+        // Evento de mudança de prioridade via click na borda
+        document.addEventListener('task:priority-changed', async (e) => {
+            const { taskId, oldPriority, newPriority } = e.detail;
+
+            logger.info('Priority changed via click', { taskId, oldPriority, newPriority });
+
+            // Atualizar estado global recarregando do storage
+            taskStorage.clearCache();
+            const tasks = await taskStorage.getAll();
+            appState.setState({ tasks: tasks });
+
+            // Atualizar CategorySidebar explicitamente
+            if (this.categorySidebar) {
+                this.categorySidebar.update();
+            }
+
+            // Verificar se precisa reordenar
+            const sortOrder = appState.getState('preferences.sortOrder');
+            if (sortOrder === 'priority') {
+                // Re-renderizar com nova ordenação
+                this.renderTasks();
+            }
+        });
+
         // Atalhos de teclado
         document.addEventListener('keydown', this.handleKeyboardShortcuts);
     }
