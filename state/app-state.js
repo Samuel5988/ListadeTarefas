@@ -27,7 +27,8 @@ const initialState = {
     preferences: {
         theme: 'light',
         autoSave: true,
-        showCompleted: true
+        showCompleted: true,
+        sortOrder: 'priority' // 'priority' ou 'created'
     },
     // Mantidos da Story 1.1 para compatibilidade
     filter: {
@@ -1080,6 +1081,43 @@ class AppState {
         logger.info(`getFilteredTasks result: ${filteredTasks.length} tasks passed filter`);
 
         return filteredTasks;
+    }
+
+    /**
+     * Ordena tarefas por prioridade (alta → média → baixa)
+     * @param {Array} tasks - Lista de tarefas
+     * @returns {Array} Tarefas ordenadas (muta o array para manter reatividade)
+     */
+    sortTasksByPriority(tasks) {
+        const priorityWeight = {
+            high: 5,
+            medium: 3,
+            low: 1
+        };
+
+        return tasks.sort((a, b) => {
+            // Ordenar por peso da prioridade (descendente)
+            const weightA = priorityWeight[a.priority] || 3;
+            const weightB = priorityWeight[b.priority] || 3;
+
+            if (weightA !== weightB) {
+                return weightB - weightA; // Alta (5) primeiro
+            }
+
+            // Empate: ordenar por data de criação (mais antiga primeiro)
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+    }
+
+    /**
+     * Ordena tarefas por data de criação (mais recente primeiro)
+     * @param {Array} tasks - Lista de tarefas
+     * @returns {Array} Tarefas ordenadas (muta o array para manter reatividade)
+     */
+    sortTasksByCreated(tasks) {
+        return tasks.sort((a, b) => {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
     }
 
     /**

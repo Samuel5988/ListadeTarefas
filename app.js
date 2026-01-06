@@ -178,6 +178,9 @@ class TaskApp {
         // Inicializar ThemeManager
         this.initializeThemeManager();
 
+        // Inicializar Sort Toggle
+        this.initializeSortToggle();
+
         // Inicializar TaskForm
         this.initializeTaskForm();
 
@@ -224,6 +227,59 @@ class TaskApp {
             logger.info('ThemeManager initialized successfully');
         } catch (error) {
             logger.error('Failed to initialize ThemeManager', error);
+        }
+    }
+
+    /**
+     * Inicializa o Sort Toggle
+     */
+    initializeSortToggle() {
+        try {
+            logger.info('Initializing Sort Toggle...');
+
+            // Criar botão de toggle
+            const sortToggle = document.createElement('button');
+            sortToggle.className = 'btn btn--secondary sort-toggle';
+            sortToggle.setAttribute('aria-label', 'Alternar ordenação');
+            sortToggle.innerHTML = `
+                <svg class="sort-toggle__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 4h13M3 8h9M3 12h5M15 12l4-4 4 4M19 8v8"/>
+                </svg>
+                <span class="sort-toggle__text">Ordenar por: Prioridade</span>
+            `;
+
+            // Event listener
+            sortToggle.addEventListener('click', () => this.toggleSortOrder());
+
+            // Adicionar ao container
+            const sortContainer = document.getElementById('sort-toggle-container');
+            if (sortContainer) {
+                sortContainer.appendChild(sortToggle);
+                logger.info('Sort toggle button added to header');
+            } else {
+                logger.warn('sort-toggle-container not found');
+            }
+
+            // Atualizar texto inicial baseado na preferência salva
+            this.updateSortToggleText();
+
+            // Salvar referência
+            this.sortToggleElement = sortToggle;
+        } catch (error) {
+            logger.error('Failed to initialize Sort Toggle', error);
+        }
+    }
+
+    /**
+     * Atualiza texto do sort toggle
+     */
+    updateSortToggleText() {
+        const sortToggle = document.querySelector('.sort-toggle__text');
+        if (sortToggle) {
+            const sortOrder = appState.getState('preferences.sortOrder') || 'priority';
+            sortToggle.textContent = sortOrder === 'priority'
+                ? 'Ordenar por: Prioridade'
+                : 'Ordenar por: Data';
         }
     }
 
@@ -288,6 +344,29 @@ class TaskApp {
         window.addEventListener(STATE_EVENTS.TASK_COMPLETED, this.handleTaskEvents);
         window.addEventListener(STATE_EVENTS.THEME_CHANGED, this.handleThemeChange);
 
+        // BUG FIX: Listener para TASK_DELETED estava faltando, causando dessincronização
+        window.addEventListener(STATE_EVENTS.TASK_DELETED, async () => {
+            logger.info('TASK_DELETED event received, reloading from storage...');
+            try {
+                // Recarregar do storage para garantir consistência (Single Source of Truth)
+                taskStorage.clearCache();
+                const tasks = await taskStorage.getAll();
+                appState.setState({ tasks: tasks });
+
+                // Atualizar CategorySidebar explicitamente
+                if (this.categorySidebar) {
+                    this.categorySidebar.update();
+                }
+
+                // Re-renderizar tarefas
+                this.renderTasks();
+
+                logger.info('UI updated after TASK_DELETED', { taskCount: tasks.length });
+            } catch (error) {
+                logger.error('Error handling TASK_DELETED event', error);
+            }
+        });
+
         // Eventos da Category Sidebar
         window.addEventListener(STATE_EVENTS.CATEGORIES_CHANGED, () => {
             if (this.categorySidebar) {
@@ -330,12 +409,39 @@ class TaskApp {
     }
 
     /**
+     * Alterna ordem de classificação (prioridade vs data)
+     */
+    toggleSortOrder() {
+        const currentOrder = appState.getState('preferences.sortOrder') || 'priority';
+        const newOrder = currentOrder === 'priority' ? 'created' : 'priority';
+
+        appState.updatePreferences({ sortOrder: newOrder });
+
+        // Atualizar texto do botão
+        this.updateSortToggleText();
+
+        // Re-renderizar com nova ordenação
+        this.renderTasks();
+
+        logger.info(`Sort order changed: ${currentOrder} → ${newOrder}`);
+    }
+
+    /**
      * Renderiza a lista de tarefas
      */
     renderTasks() {
         try {
             // Usar getFilteredTasks para respeitar os filtros ativos (incluindo categoria)
-            const tasks = appState.getFilteredTasks();
+            let tasks = appState.getFilteredTasks();
+
+            // Aplicar ordenação conforme preferência do usuário
+            const sortOrder = appState.getState('preferences.sortOrder') || 'priority';
+            if (sortOrder === 'priority') {
+                tasks = appState.sortTasksByPriority(tasks);
+            } else {
+                tasks = appState.sortTasksByCreated(tasks);
+            }
+
             const container = document.querySelector('main .grid');
 
             // Store cleanup function references
@@ -517,6 +623,10 @@ class TaskApp {
                         logger.info('Tasks reloaded from storage after TASK_CREATED', { count: tasks.length });
                     }
                     this.renderTasks();
+                    // CORREÇÃO: Atualizar CategorySidebar para atualizar contadores
+                    if (this.categorySidebar) {
+                        this.categorySidebar.update();
+                    }
                     this.showNotification('Tarefa criada com sucesso', 'success');
                     break;
                 case STATE_EVENTS.TASK_UPDATED:
@@ -531,6 +641,10 @@ class TaskApp {
                         appState.setState({ tasks: updatedTasks });
                     }
                     this.renderTasks();
+                    // CORREÇÃO: Atualizar CategorySidebar
+                    if (this.categorySidebar) {
+                        this.categorySidebar.update();
+                    }
                     break;
                 case STATE_EVENTS.TASK_COMPLETED:
                     this.showNotification('Tarefa concluída!', 'success');
@@ -543,6 +657,10 @@ class TaskApp {
                         appState.setState({ tasks: event.detail });
                     }
                     this.renderTasks();
+                    // CORREÇÃO: Atualizar CategorySidebar
+                    if (this.categorySidebar) {
+                        this.categorySidebar.update();
+                    }
                     break;
             }
         } catch (error) {
@@ -879,8 +997,8 @@ class TaskApp {
             const result = await taskStorage.remove(taskId);
 
             if (result) {
-                // Disparar evento de atualização
-                document.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_DELETED, {
+                // Disparar evento de atualização - CORREÇÃO: usar window em vez de document
+                window.dispatchEvent(new CustomEvent(STATE_EVENTS.TASK_DELETED, {
                     detail: { taskId }
                 }));
 
