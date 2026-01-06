@@ -8,6 +8,7 @@
 import { logger } from '../utils/logger.js';
 import { toast } from '../utils/toast-manager.js';
 import { STATE_EVENTS } from '../state/app-state.js';
+import { isToday, isPast } from '../utils/date-utils.js';
 
 export class CategorySidebar {
     constructor(container) {
@@ -59,6 +60,29 @@ export class CategorySidebar {
                     </button>
                 </div>
 
+                <!-- Seção de Lembretes -->
+                <div class="category-sidebar__reminders">
+                    <div class="reminder-section reminder-section--highlighted"
+                         id="reminder-today-section"
+                         data-due-date-filter="today">
+                        <div class="reminder-section__content">
+                            <span class="reminder-section__icon">🔔</span>
+                            <span class="reminder-section__title">Lembretes de Hoje</span>
+                            <span class="reminder-section__count" id="today-reminders-count">0</span>
+                        </div>
+                    </div>
+
+                    <div class="reminder-section"
+                         id="reminder-overdue-section"
+                         data-due-date-filter="overdue">
+                        <div class="reminder-section__content">
+                            <span class="reminder-section__icon">⚠️</span>
+                            <span class="reminder-section__title">Vencidas</span>
+                            <span class="reminder-section__count" id="overdue-reminders-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="category-sidebar__list" id="category-list">
                     <!-- Categorias serão renderizadas dinamicamente -->
                 </div>
@@ -74,6 +98,7 @@ export class CategorySidebar {
 
         this.update();
         this.attachEventListeners();
+        this.setupRemindersSection();
     }
 
     /**
@@ -390,5 +415,103 @@ export class CategorySidebar {
         // Usar toast para feedback visual
         toast.success(message);
         logger.info(message);
+    }
+
+    /**
+     * Configura a seção de lembretes
+     */
+    setupRemindersSection() {
+        // Listener para cliques nas seções de lembrete
+        const reminderSections = this.container.querySelectorAll('[data-due-date-filter]');
+        reminderSections.forEach(section => {
+            section.addEventListener('click', () => {
+                const filterType = section.dataset.dueDateFilter;
+                this.filterByDueDate(filterType);
+            });
+        });
+
+        // Listener para atualizar contador (reutilizar evento existente)
+        window.addEventListener('reminder:count-update', (e) => {
+            this.updateReminderCounters(e.detail.count);
+        });
+
+        // Atualizar contadores iniciais
+        this.updateReminderCounters();
+    }
+
+    /**
+     * Filtra tarefas por data de lembrete
+     */
+    filterByDueDate(filterType) {
+        try {
+            this.appState.updateFilter({ dueDate: filterType });
+            this.updateActiveReminderFilter(filterType);
+            logger.info('Due date filter applied', { filterType });
+        } catch (error) {
+            logger.error('Error applying due date filter', error);
+            this.showError('Erro ao aplicar filtro. Tente novamente.');
+        }
+    }
+
+    /**
+     * Atualiza o destaque do filtro de lembrete ativo
+     */
+    updateActiveReminderFilter(filterType) {
+        // Remover destaque de todas as seções de lembrete
+        const reminderSections = this.container.querySelectorAll('.reminder-section');
+        reminderSections.forEach(section => {
+            section.classList.remove('reminder-section--active');
+        });
+
+        // Se não for 'all', adicionar destaque à seção ativa
+        if (filterType !== 'all') {
+            const activeSection = this.container.querySelector(`[data-due-date-filter="${filterType}"]`);
+            if (activeSection) {
+                activeSection.classList.add('reminder-section--active');
+            }
+        }
+    }
+
+    /**
+     * Atualiza os contadores de lembretes
+     */
+    updateReminderCounters(todayCount = null) {
+        if (!this.appState) return;
+
+        const tasks = this.appState.getState('tasks') || [];
+
+        // Se não recebeu contador do evento, calcular manualmente
+        if (todayCount === null) {
+            todayCount = tasks.filter(task =>
+                task.dueDate &&
+                isToday(task.dueDate) &&
+                !task.completed
+            ).length;
+        }
+
+        // Atualizar contador "Hoje"
+        const todayCountElement = this.container.querySelector('#today-reminders-count');
+        if (todayCountElement) {
+            todayCountElement.textContent = todayCount;
+        }
+
+        // Calcular e atualizar contador "Vencidas"
+        const overdueCount = tasks.filter(task =>
+            task.dueDate &&
+            isPast(task.dueDate) &&
+            !isToday(task.dueDate) &&
+            !task.completed
+        ).length;
+
+        const overdueCountElement = this.container.querySelector('#overdue-reminders-count');
+        if (overdueCountElement) {
+            overdueCountElement.textContent = overdueCount;
+        }
+
+        // Highlight se houver lembretes hoje
+        const todaySection = this.container.querySelector('#reminder-today-section');
+        if (todaySection) {
+            todaySection.classList.toggle('reminder-section--has-tasks', todayCount > 0);
+        }
     }
 }

@@ -1322,3 +1322,144 @@
     background-color: #664d03;
     color: #ffca2c;
 }
+
+/* Reminders Section in Sidebar */
+.category-sidebar__reminders {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+    margin-bottom: 1rem;
+}
+
+.reminder-section {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+}
+
+.reminder-section:last-child {
+    margin-bottom: 0;
+}
+
+.reminder-section__content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.reminder-section__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.reminder-section__title {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--text-primary, #212529);
+    flex: 1;
+}
+
+.reminder-section__count {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted, #6c757d);
+    padding: 0.125rem 0.5rem;
+    background-color: var(--bg-secondary, #f8f9fa);
+    border-radius: 1rem;
+}
+
+/* Highlighted state for "Lembretes de Hoje" */
+.reminder-section--highlighted {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.reminder-section--highlighted .reminder-section__title {
+    font-weight: 500;
+    color: #856404;
+}
+
+.reminder-section--highlighted .reminder-section__count {
+    background-color: #ffc107;
+    color: #856404;
+}
+
+/* Active state when filter is applied */
+.reminder-section--active {
+    background-color: var(--primary-bg, #6c757d);
+    border-color: var(--primary-bg, #6c757d);
+}
+
+.reminder-section--active .reminder-section__title {
+    color: white;
+    font-weight: 500;
+}
+
+.reminder-section--active .reminder-section__count {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Hover states */
+.reminder-section:hover {
+    background-color: var(--hover-bg, #f8f9fa);
+    transform: translateX(2px);
+}
+
+.reminder-section--highlighted:hover {
+    background-color: #ffe69c;
+}
+
+/* Has tasks indicator */
+.reminder-section--has-tasks {
+    animation: reminder-pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes reminder-pulse-subtle {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(255, 193, 7, 0);
+    }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .reminder-section {
+    background-color: #495057;
+}
+
+[data-theme="dark"] .reminder-section__title {
+    color: #ced4da;
+}
+
+[data-theme="dark"] .reminder-section__count {
+    background-color: #343a40;
+    color: #adb5bd;
+}
+
+[data-theme="dark"] .reminder-section--highlighted {
+    background-color: #664d03;
+    border-color: #ffca2c;
+}
+
+[data-theme="dark"] .reminder-section--highlighted .reminder-section__title {
+    color: #ffca2c;
+}
+
+[data-theme="dark"] .reminder-section--highlighted .reminder-section__count {
+    background-color: #ffca2c;
+    color: #212529;
+}
+
+[data-theme="dark"] .reminder-section--active {
+    background-color: var(--primary-dark, #495057);
+}
+
+[data-theme="dark"] .reminder-section:hover {
+    background-color: #5c636a;
+}

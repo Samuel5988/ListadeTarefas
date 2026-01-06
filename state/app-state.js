@@ -6,6 +6,7 @@
 
 import { logger } from '../utils/logger.js';
 import { taskStorage } from '../services/task-storage.js';
+import { isToday, isPast } from '../utils/date-utils.js';
 
 // Eventos customizados para mudanças de estado
 export const STATE_EVENTS = {
@@ -36,6 +37,13 @@ const initialState = {
         category: 'all',
         priority: 'all',
         searchTerm: '',
+        // dueDate filter options (Story 4.3):
+        // - 'all': todas as tarefas (sem filtro de data)
+        // - 'today': tarefas com dueDate igual a hoje
+        // - 'overdue': tarefas vencidas (dueDate antes de hoje, não completadas)
+        // - 'upcoming': tarefas futuras (dueDate após hoje, exclui hoje e vencidas)
+        // NOTA: Tarefas sem dueDate são excluídas dos filtros de data
+        dueDate: 'all',
     },
     ui: {
         theme: 'light', // light, dark
@@ -1070,6 +1078,32 @@ class AppState {
 
                 if (!titleMatch && !descriptionMatch) {
                     logger.debug(`Task "${task.title}" filtered out: search term not found`);
+                    return false;
+                }
+            }
+
+            // Filtro por data de lembrete (Story 4.3)
+            // Tarefas sem dueDate são excluídas dos filtros de data para exibir
+            // apenas tarefas com datas explícitas definidas pelo usuário
+            if (filter.dueDate && filter.dueDate !== 'all') {
+                if (!task.dueDate) {
+                    logger.debug(`Task "${task.title}" filtered out: no due date (requires explicit date)`);
+                    return false;
+                }
+
+                if (filter.dueDate === 'today' && !isToday(task.dueDate)) {
+                    logger.debug(`Task "${task.title}" filtered out: not due today`);
+                    return false;
+                }
+
+                if (filter.dueDate === 'overdue' && !isPast(task.dueDate)) {
+                    logger.debug(`Task "${task.title}" filtered out: not overdue`);
+                    return false;
+                }
+
+                if (filter.dueDate === 'upcoming' && isPast(task.dueDate)) {
+                    // "upcoming" = tarefas futuras (exclui hoje e vencidas)
+                    logger.debug(`Task "${task.title}" filtered out: already past (not upcoming)`);
                     return false;
                 }
             }
