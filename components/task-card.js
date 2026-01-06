@@ -7,6 +7,7 @@
 import { taskStorage } from '../services/task-storage.js';
 import { STATE_EVENTS } from '../state/app-state.js';
 import { logger } from '../utils/logger.js';
+import { formatDateWithLabel, isToday, isTomorrow, isPast } from '../utils/date-utils.js';
 
 /**
  * Mapeamento de prioridades para cores (conforme UX specification)
@@ -139,6 +140,11 @@ export class TaskCard {
             this.createCategoryBadge(mainContent);
         }
 
+        // Criar exibição de data de lembrete (se existir)
+        if (this.task.dueDate) {
+            this.createDueDateDisplay(mainContent);
+        }
+
         this.contentWrapper.appendChild(mainContent);
 
         // Adicionar contentWrapper ao DOM PRIMEIRO
@@ -205,6 +211,35 @@ export class TaskCard {
         this.categoryBadgeElement.className = 'task-card__category-badge';
         this.categoryBadgeElement.textContent = this.task.category;
         parent.appendChild(this.categoryBadgeElement);
+    }
+
+    /**
+     * Cria exibição da data de lembrete
+     * @param {HTMLElement} parent - Elemento pai onde será inserido
+     */
+    createDueDateDisplay(parent) {
+        const dueDateContainer = document.createElement('div');
+        dueDateContainer.className = 'task-card__due-date';
+
+        // Aplicar classes de estado
+        if (isToday(this.task.dueDate)) {
+            dueDateContainer.classList.add('task-card__due-date--today');
+        } else if (isTomorrow(this.task.dueDate)) {
+            dueDateContainer.classList.add('task-card__due-date--tomorrow');
+        } else if (isPast(this.task.dueDate)) {
+            dueDateContainer.classList.add('task-card__due-date--past');
+        }
+
+        // Ícone de calendário
+        dueDateContainer.innerHTML = `
+            <svg class="task-card__due-date-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 2v6M8 2v6M3 10h18" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span class="task-card__due-date-text">${formatDateWithLabel(this.task.dueDate)}</span>
+        `;
+
+        parent.appendChild(dueDateContainer);
     }
 
     /**

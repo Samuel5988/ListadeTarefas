@@ -450,6 +450,80 @@
     margin-top: var(--space-2);
 }
 
+/* Due Date Display */
+.task-card__due-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+    /* Prevenir overflow de texto longo */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.task-card__due-date-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.task-card__due-date--today {
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: 500;
+}
+
+.task-card__due-date--today .task-card__due-date-icon {
+    opacity: 1;
+}
+
+.task-card__due-date--tomorrow {
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: 500;
+}
+
+.task-card__due-date--tomorrow .task-card__due-date-icon {
+    opacity: 1;
+}
+
+.task-card__due-date--past {
+    background-color: #f8d7da;
+    color: #721c24;
+    font-weight: 500;
+}
+
+.task-card__due-date--past .task-card__due-date-icon {
+    opacity: 1;
+}
+
+/* Dark mode adjustments for due date */
+[data-theme="dark"] .task-card__due-date {
+    background-color: #495057;
+    color: #ced4da;
+}
+
+[data-theme="dark"] .task-card__due-date--today {
+    background-color: #1e4620;
+    color: #a3d9a5;
+}
+
+[data-theme="dark"] .task-card__due-date--tomorrow {
+    background-color: #857c02;
+    color: #ffeeba;
+}
+
+[data-theme="dark"] .task-card__due-date--past {
+    background-color: #5c1b1b;
+    color: #f5c6cb;
+}
+
 /* Task Card Animations */
 @keyframes task-card-check {
     0% {
