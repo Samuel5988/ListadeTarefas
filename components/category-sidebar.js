@@ -51,9 +51,29 @@ export class CategorySidebar {
      */
     render() {
         this.container.innerHTML = `
-            <aside class="category-sidebar">
+            <!-- Botão Hamburguer Mobile -->
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menu de categorias">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
+            <!-- Overlay de fundo -->
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+            <aside class="category-sidebar" id="category-sidebar">
                 <div class="category-sidebar__header">
-                    <h2 class="category-sidebar__title">Categorias</h2>
+                    <div class="category-sidebar__header-top">
+                        <h2 class="category-sidebar__title">Categorias</h2>
+                        <button class="mobile-close-btn" id="mobile-close-btn" aria-label="Fechar menu">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <button class="category-sidebar__add-btn" id="add-category-btn">
                         <span class="icon">+</span>
                         Nova Categoria
@@ -99,6 +119,7 @@ export class CategorySidebar {
         this.update();
         this.attachEventListeners();
         this.setupRemindersSection();
+        this.setupMobileMenu();
     }
 
     /**
@@ -430,9 +451,26 @@ export class CategorySidebar {
             });
         });
 
-        // Listener para atualizar contador (reutilizar evento existente)
-        window.addEventListener('reminder:count-update', (e) => {
-            this.updateReminderCounters(e.detail.count);
+        // Listener para atualizar contador (quando tarefas mudam)
+        window.addEventListener('reminder:count-update', () => {
+            this.updateReminderCounters();
+        });
+
+        // Listener para quando tarefas são atualizadas/criadas/deletadas
+        window.addEventListener(STATE_EVENTS.TASK_CREATED, () => {
+            this.updateReminderCounters();
+        });
+        window.addEventListener(STATE_EVENTS.TASK_UPDATED, () => {
+            this.updateReminderCounters();
+        });
+        window.addEventListener(STATE_EVENTS.TASK_COMPLETED, () => {
+            this.updateReminderCounters();
+        });
+
+        // Listener CRÍTICO: Atualizar quando tarefas são carregadas do storage
+        window.addEventListener(STATE_EVENTS.TASKS_LOADED, () => {
+            logger.info('TASKS_LOADED event received, updating reminder counters...');
+            this.updateReminderCounters();
         });
 
         // Atualizar contadores iniciais
@@ -474,34 +512,44 @@ export class CategorySidebar {
 
     /**
      * Atualiza os contadores de lembretes
+     * Calcula ambos os contadores manualmente para garantir precisão
      */
-    updateReminderCounters(todayCount = null) {
+    updateReminderCounters() {
         if (!this.appState) return;
 
         const tasks = this.appState.getState('tasks') || [];
 
-        // Se não recebeu contador do evento, calcular manualmente
-        if (todayCount === null) {
-            todayCount = tasks.filter(task =>
-                task.dueDate &&
-                isToday(task.dueDate) &&
-                !task.completed
-            ).length;
-        }
+        // DEBUG: Log para verificar tarefas
+        logger.info('updateReminderCounters called', {
+            totalTasks: tasks.length,
+            tasksWithDueDate: tasks.filter(t => t.dueDate).length,
+            tasksData: tasks.map(t => ({ id: t.id, title: t.title, dueDate: t.dueDate, completed: t.completed }))
+        });
 
-        // Atualizar contador "Hoje"
+        // Calcular contador "Hoje"
+        const todayCount = tasks.filter(task =>
+            task.dueDate &&
+            isToday(task.dueDate) &&
+            !task.completed
+        ).length;
+
         const todayCountElement = this.container.querySelector('#today-reminders-count');
         if (todayCountElement) {
             todayCountElement.textContent = todayCount;
         }
 
-        // Calcular e atualizar contador "Vencidas"
+        // Calcular contador "Vencidas" (overdue = past and NOT today)
         const overdueCount = tasks.filter(task =>
             task.dueDate &&
             isPast(task.dueDate) &&
             !isToday(task.dueDate) &&
             !task.completed
         ).length;
+
+        logger.info('Reminder counters calculated', {
+            today: todayCount,
+            overdue: overdueCount
+        });
 
         const overdueCountElement = this.container.querySelector('#overdue-reminders-count');
         if (overdueCountElement) {
@@ -513,5 +561,54 @@ export class CategorySidebar {
         if (todaySection) {
             todaySection.classList.toggle('reminder-section--has-tasks', todayCount > 0);
         }
+
+        // Highlight se houver lembretes vencidos
+        const overdueSection = this.container.querySelector('#reminder-overdue-section');
+        if (overdueSection) {
+            overdueSection.classList.toggle('reminder-section--has-tasks', overdueCount > 0);
+        }
+    }
+
+    /**
+     * Configura o menu mobile com toggle e overlay
+     */
+    setupMobileMenu() {
+        const menuToggle = this.container.querySelector('#mobile-menu-toggle');
+        const closeBtn = this.container.querySelector('#mobile-close-btn');
+        const overlay = this.container.querySelector('#sidebar-overlay');
+        const sidebar = this.container.querySelector('#category-sidebar');
+
+        if (!menuToggle || !closeBtn || !overlay || !sidebar) {
+            logger.warn('Mobile menu elements not found');
+            return;
+        }
+
+        // Toggle sidebar
+        const toggleSidebar = () => {
+            const isOpen = sidebar.classList.contains('category-sidebar--open');
+            if (isOpen) {
+                sidebar.classList.remove('category-sidebar--open');
+                overlay.classList.remove('sidebar-overlay--active');
+                document.body.style.overflow = '';
+            } else {
+                sidebar.classList.add('category-sidebar--open');
+                overlay.classList.add('sidebar-overlay--active');
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        // Event listeners
+        menuToggle.addEventListener('click', toggleSidebar);
+        closeBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Fechar com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('category-sidebar--open')) {
+                toggleSidebar();
+            }
+        });
+
+        logger.info('Mobile menu setup complete');
     }
 }

@@ -2,6 +2,50 @@
  * Estilos para Category Sidebar
  */
 
+/* Botão Hamburguer Mobile */
+.mobile-menu-toggle {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1002;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--bg-secondary);
+    transform: scale(1.05);
+}
+
+.mobile-menu-toggle svg {
+    display: block;
+}
+
+/* Overlay de fundo */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay--active {
+    display: block;
+    opacity: 1;
+}
+
 /* Sidebar Container */
 .category-sidebar {
     position: fixed;
@@ -48,8 +92,29 @@ main {
     border-bottom: 1px solid var(--border-color);
 }
 
+.category-sidebar__header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.mobile-close-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.mobile-close-btn:hover {
+    color: var(--text-primary);
+}
+
 .category-sidebar__title {
-    margin: 0 0 16px 0;
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -212,17 +277,39 @@ main {
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+    /* Mostrar botão hamburguer apenas no mobile */
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    /* Mostrar botão de fechar no mobile */
+    .mobile-close-btn {
+        display: block;
+    }
+
+    /* Sidebar escondida por padrão no mobile */
     .category-sidebar {
-        width: 100%;
+        width: 85%;
         max-width: 320px;
+        transform: translateX(-100%);
+        z-index: 1001;
     }
 
+    /* Sidebar aberta no mobile */
     .category-sidebar--open {
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        transform: translateX(0);
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
     }
 
+    /* Remover margin-left do main content no mobile */
     .main-container--with-sidebar {
         margin-left: 0;
+    }
+
+    .main-container,
+    .max-w-7xl,
+    main {
+        margin-left: 0 !important;
     }
 }
 

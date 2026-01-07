@@ -114,16 +114,16 @@ export class ReminderChecker {
                 }
             }
 
-            // Calcular contador de lembretes hoje
-            const todayReminders = allTasks.filter(task =>
+            // Calcular contador de lembretes vencidos (overdue)
+            const overdueReminders = allTasks.filter(task =>
                 task.dueDate &&
-                isToday(task.dueDate) &&
+                isPast(task.dueDate) &&
                 !task.completed
             ).length;
 
             // Dispatch evento com contador atualizado
             window.dispatchEvent(new CustomEvent('reminder:count-update', {
-                detail: { count: todayReminders }
+                detail: { count: overdueReminders }
             }));
 
             if (newlyActivated.length > 0) {

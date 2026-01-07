@@ -404,17 +404,17 @@ class TaskApp {
     }
 
     /**
-     * Atualiza contador de lembretes
+     * Atualiza contador de lembretes vencidos
      */
     updateReminderCounter(count) {
         const counterText = document.querySelector('.reminder-counter__text');
         if (counterText) {
             if (count === 0) {
-                counterText.textContent = 'Nenhum lembrete hoje';
+                counterText.textContent = 'Nenhum lembrete vencido';
             } else if (count === 1) {
-                counterText.textContent = '1 lembrete hoje';
+                counterText.textContent = '1 lembrete vencido';
             } else {
-                counterText.textContent = `${count} lembretes hoje`;
+                counterText.textContent = `${count} lembretes vencidos`;
             }
         }
 
