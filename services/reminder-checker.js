@@ -156,6 +156,30 @@ export class ReminderChecker {
     }
 
     /**
+     * Atualiza apenas o contador de lembretes (sem ativar notificações)
+     * Método público para ser chamado após modificações nas tarefas
+     */
+    async updateReminderCount() {
+        try {
+            const allTasks = await taskStorage.getAll();
+
+            const todayReminders = allTasks.filter(task =>
+                task.dueDate &&
+                isToday(task.dueDate) &&
+                !task.completed
+            ).length;
+
+            window.dispatchEvent(new CustomEvent('reminder:count-update', {
+                detail: { count: todayReminders }
+            }));
+
+            logger.debug('Reminder count updated', { count: todayReminders });
+        } catch (error) {
+            logger.error('Error updating reminder count', error);
+        }
+    }
+
+    /**
      * Retorna status atual
      */
     getStatus() {

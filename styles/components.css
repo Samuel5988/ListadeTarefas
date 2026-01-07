@@ -1463,3 +1463,155 @@
 [data-theme="dark"] .reminder-section:hover {
     background-color: #5c636a;
 }
+
+/* ==================== POSTPONE MENU ==================== */
+
+/* Postpone Button in Task Card */
+.task-card__postpone-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #6c757d);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-left: 0.25rem;
+}
+
+.task-card__postpone-btn:hover {
+    background-color: var(--hover-bg, #f8f9fa);
+    color: var(--text-primary, #212529);
+}
+
+.task-card__postpone-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Postpone Menu Dropdown */
+.postpone-menu {
+    position: fixed;
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    min-width: 160px;
+    z-index: 1000;
+    animation: postpone-menu-fade-in 0.15s ease-out;
+}
+
+@keyframes postpone-menu-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.postpone-menu__option {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary, #212529);
+    transition: background-color 0.15s ease;
+}
+
+.postpone-menu__option:hover {
+    background-color: var(--hover-bg, #f8f9fa);
+}
+
+.postpone-menu__option:active {
+    background-color: var(--active-bg, #e9ecef);
+}
+
+/* Undo Notification */
+.postpone-undo-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1001;
+    animation: postpone-slide-up 0.3s ease-out;
+}
+
+@keyframes postpone-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.postpone-undo-notification span {
+    color: var(--text-primary, #212529);
+    font-size: 0.875rem;
+}
+
+.postpone-undo-btn {
+    background-color: var(--primary-bg, #6c757d);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.postpone-undo-btn:hover {
+    background-color: var(--primary-dark, #5a6268);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .postpone-menu {
+    background-color: #343a40;
+    border-color: #495057;
+}
+
+[data-theme="dark"] .postpone-menu__option {
+    color: #ced4da;
+}
+
+[data-theme="dark"] .postpone-menu__option:hover {
+    background-color: #495057;
+}
+
+[data-theme="dark"] .postpone-undo-notification {
+    background-color: #343a40;
+    border-color: #495057;
+}
+
+[data-theme="dark"] .postpone-undo-notification span {
+    color: #ced4da;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .postpone-undo-notification {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        padding: 0.75rem 1rem;
+    }
+}

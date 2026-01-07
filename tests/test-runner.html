@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Runner - Lista de Tarefas</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+            border-bottom: 1px solid #3e3e3e;
+            padding-bottom: 10px;
+        }
+        #test-output {
+            background-color: #252526;
+            border: 1px solid #3e3e3e;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .pass { color: #4ec9b0; }
+        .fail { color: #f48771; }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .summary.success {
+            background-color: #0e6c0e33;
+            border: 1px solid #0e6c0e;
+        }
+        .summary.failure {
+            background-color: #f14c4c33;
+            border: 1px solid #f14c4c;
+        }
+        #run-btn {
+            background-color: #0e6c0e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #run-btn:hover {
+            background-color: #117711;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Runner - Date Utils</h1>
+    <button id="run-btn">Executar Testes</button>
+    <div id="test-output"></div>
+
+    <script type="module">
+        document.getElementById('run-btn').addEventListener('click', async () => {
+            const output = document.getElementById('test-output');
+            output.innerHTML = 'Carregando testes...';
+
+            try {
+                // Import test module
+                const { runner, allPassed } = await import('./date-utils.test.js');
+
+                // Wait a bit for tests to complete
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Display results
+                const results = runner.results.map(r => {
+                    const icon = r.status === 'PASS' ? '✓' : '✗';
+                    const className = r.status === 'PASS' ? 'pass' : 'fail';
+                    return `<span class="${className}">${icon} ${r.name}${r.error ? ': ' + r.error : ''}</span>`;
+                }).join('\n');
+
+                const summaryClass = allPassed ? 'success' : 'failure';
+                const summary = `
+<div class="summary ${summaryClass}">
+Total: ${runner.passed + runner.failed} |
+Pass: <span class="pass">${runner.passed}</span> |
+Fail: <span class="fail">${runner.failed}</span>
+</div>`;
+
+                output.innerHTML = results + summary;
+
+            } catch (error) {
+                output.innerHTML = `<span class="fail">Erro ao executar testes: ${error.message}</span>`;
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

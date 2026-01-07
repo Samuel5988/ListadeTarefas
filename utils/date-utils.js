@@ -89,7 +89,7 @@ export function isTomorrow(isoString) {
  * Verifica se a data está no passado (incluindo hoje com hora já passada)
  * @param {string} isoString - Data em formato ISO
  * @returns {boolean} true se data/hora já passou em relação ao momento atual
- * @note Usa timezone do navegador para comparação - pode hazer discrepâncias se usuário viajar entre timezones
+ * @note Usa timezone do navegador para comparação - pode fazer discrepâncias se usuário viajar entre timezones
  */
 export function isPast(isoString) {
     if (!isoString) return false;
@@ -148,4 +148,40 @@ export function formatDateWithLabel(isoString) {
     }
 
     return formattedDate;
+}
+
+/**
+ * Adiciona horas a uma data
+ * @param {string|Date} date - Data base
+ * @param {number} hours - Horas a adicionar
+ * @returns {string} Nova data em formato ISO
+ */
+export function addHours(date, hours) {
+    const result = new Date(date);
+    result.setHours(result.getHours() + hours);
+    return result.toISOString();
+}
+
+/**
+ * Adiciona dias a uma data
+ * @param {string|Date} date - Data base
+ * @param {number} days - Dias a adicionar
+ * @returns {string} Nova data em formato ISO
+ */
+export function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result.toISOString();
+}
+
+/**
+ * Define hora específica para uma data
+ * @param {string|Date} date - Data base
+ * @param {number} hour - Hora a definir (0-23)
+ * @returns {string} Nova data em formato ISO
+ */
+export function setHour(date, hour) {
+    const result = new Date(date);
+    result.setHours(hour, 0, 0, 0);
+    return result.toISOString();
 }

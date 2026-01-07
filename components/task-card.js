@@ -8,6 +8,7 @@ import { taskStorage } from '../services/task-storage.js';
 import { STATE_EVENTS } from '../state/app-state.js';
 import { logger } from '../utils/logger.js';
 import { formatDateWithLabel, isToday, isTomorrow, isPast } from '../utils/date-utils.js';
+import { PostponeMenu, closeAllPostponeMenus } from './postpone-menu.js';
 
 /**
  * Mapeamento de prioridades para cores (conforme UX specification)
@@ -234,7 +235,7 @@ export class TaskCard {
             dueDateContainer.classList.add('task-card__due-date--past');
         }
 
-        // Ícone de calendário
+        // Ícone de calendário + texto + botão adiar
         dueDateContainer.innerHTML = `
             <svg class="task-card__due-date-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -243,7 +244,152 @@ export class TaskCard {
             <span class="task-card__due-date-text">${formatDateWithLabel(this.task.dueDate)}</span>
         `;
 
+        // Botão de adiamento
+        const postponeBtn = this.createPostponeButton();
+        dueDateContainer.appendChild(postponeBtn);
+
         parent.appendChild(dueDateContainer);
+    }
+
+    /**
+     * Cria o botão de adiamento (se tiver dueDate)
+     * @returns {HTMLElement|null} Botão ou null
+     */
+    createPostponeButton() {
+        if (!this.task.dueDate) return null;
+
+        const button = document.createElement('button');
+        button.className = 'task-card__postpone-btn';
+        button.setAttribute('aria-label', 'Adiar lembrete');
+        button.setAttribute('title', 'Adiar lembrete');
+        button.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        `;
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.togglePostponeMenu(e.currentTarget);
+        });
+
+        return button;
+    }
+
+    /**
+     * Abre/fecha menu de adiamento
+     * @param {HTMLElement} button - Botão que foi clicado
+     */
+    togglePostponeMenu(button) {
+        // Fechar menu se já estiver aberto
+        const existingMenu = document.querySelector('.postpone-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+            return;
+        }
+
+        // Criar e mostrar menu
+        const menu = new PostponeMenu(
+            this.task.id,
+            this.task.dueDate,
+            async (newDate, originalDate) => {
+                // Callback de sucesso: recarregar tarefa do storage para sincronização completa
+                try {
+                    const allTasks = await taskStorage.getAll();
+                    const updatedTask = allTasks.find(t => t.id === this.task.id);
+
+                    if (updatedTask) {
+                        this.task = updatedTask;
+
+                        // Atualizar display da data com os dados sincronizados
+                        const dateElement = this.element.querySelector('.task-card__due-date-text');
+                        if (dateElement) {
+                            dateElement.textContent = formatDateWithLabel(this.task.dueDate);
+                        }
+
+                        // Atualizar classes de estado (today/tomorrow/past)
+                        const dueDateContainer = this.element.querySelector('.task-card__due-date');
+                        if (dueDateContainer) {
+                            dueDateContainer.classList.remove('task-card__due-date--today', 'task-card__due-date--tomorrow', 'task-card__due-date--past');
+                            if (isToday(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--today');
+                            } else if (isTomorrow(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--tomorrow');
+                            } else if (isPast(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--past');
+                            }
+                        }
+                    }
+
+                    logger.info('Task postponed successfully', {
+                        taskId: this.task.id,
+                        newDate,
+                        originalDate
+                    });
+                } catch (error) {
+                    logger.error('Error reloading task after postpone', error);
+                }
+            },
+            async (restoredDate) => {
+                // Callback de cancelamento: recarregar tarefa do storage
+                try {
+                    const allTasks = await taskStorage.getAll();
+                    const updatedTask = allTasks.find(t => t.id === this.task.id);
+
+                    if (updatedTask) {
+                        this.task = updatedTask;
+
+                        // Atualizar display da data
+                        const dateElement = this.element.querySelector('.task-card__due-date-text');
+                        if (dateElement) {
+                            dateElement.textContent = formatDateWithLabel(this.task.dueDate);
+                        }
+
+                        // Atualizar classes de estado
+                        const dueDateContainer = this.element.querySelector('.task-card__due-date');
+                        if (dueDateContainer) {
+                            dueDateContainer.classList.remove('task-card__due-date--today', 'task-card__due-date--tomorrow', 'task-card__due-date--past');
+                            if (isToday(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--today');
+                            } else if (isTomorrow(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--tomorrow');
+                            } else if (isPast(this.task.dueDate)) {
+                                dueDateContainer.classList.add('task-card__due-date--past');
+                            }
+                        }
+                    }
+
+                    logger.info('Task postpone undone', {
+                        taskId: this.task.id,
+                        restoredDate
+                    });
+                } catch (error) {
+                    logger.error('Error reloading task after undo', error);
+                }
+            }
+        );
+
+        const menuElement = menu.render();
+
+        // Posicionar menu próximo ao botão
+        const rect = button.getBoundingClientRect();
+        menuElement.style.position = 'fixed';
+        menuElement.style.top = `${rect.bottom + 5}px`;
+        menuElement.style.left = `${rect.left}px`;
+
+        document.body.appendChild(menuElement);
+
+        // Fechar menu ao clicar fora
+        const closeMenuOnClickOutside = (e) => {
+            if (!menuElement.contains(e.target) && e.target !== button) {
+                menu.destroy();
+                document.removeEventListener('click', closeMenuOnClickOutside);
+            }
+        };
+        document.addEventListener('click', closeMenuOnClickOutside);
+
+        logger.debug('Postpone menu opened', { taskId: this.task.id });
     }
 
     /**
