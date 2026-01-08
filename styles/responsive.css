@@ -292,3 +292,66 @@
         }
     }
 }
+
+/* ========================================
+   FAB (Floating Action Button) Mobile Fix
+   ======================================== */
+
+/* Mobile-first FAB styles - override any conflicting styles */
+.fab.fab--primary {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    z-index: 9999 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Small mobile devices (< 375px) */
+@media (max-width: 374px) {
+    .fab.fab--primary {
+        bottom: 12px !important;
+        right: 12px !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+    }
+
+    .fab.fab--primary .fab__icon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+/* Medium mobile devices (375px - 767px) */
+@media (min-width: 375px) and (max-width: 767px) {
+    .fab.fab--primary {
+        bottom: 16px !important;
+        right: 16px !important;
+        width: 56px !important;
+        height: 56px !important;
+    }
+}
+
+/* Touch device optimization for FAB */
+@media (hover: none) and (pointer: coarse) {
+    .fab.fab--primary {
+        /* Ensure minimum touch target size (48x48px) */
+        min-width: 48px !important;
+        min-height: 48px !important;
+
+        /* Remove hover effects on touch devices */
+        transform: none !important;
+    }
+
+    .fab.fab--primary:active {
+        transform: scale(0.95) !important;
+    }
+}
