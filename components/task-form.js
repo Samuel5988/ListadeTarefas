@@ -85,7 +85,64 @@ export class TaskForm {
 
         document.body.appendChild(this.fabElement);
 
+        // Forçar posição correta (correção para mobile)
+        this.forceFabPosition();
+
         logger.debug('FAB created with inline styles');
+    }
+
+    /**
+     * Força a posição do FAB para garantir que flutue corretamente
+     * Correção para problemas de mobile onde position: fixed pode não funcionar
+     */
+    forceFabPosition() {
+        if (!this.fabElement) return;
+
+        // Pequeno delay para garantir que o DOM está pronto
+        setTimeout(() => {
+            // Remover e readicionar para forçar repaint
+            const parent = this.fabElement.parentNode;
+            if (parent) {
+                parent.removeChild(this.fabElement);
+                parent.appendChild(this.fabElement);
+            }
+
+            // Aplicar estilos inline novamente para garantir
+            this.fabElement.style.cssText = `
+                position: fixed !important;
+                bottom: 16px !important;
+                right: 16px !important;
+                width: 56px !important;
+                height: 56px !important;
+                min-width: 56px !important;
+                min-height: 56px !important;
+                border-radius: 50% !important;
+                border: none !important;
+                background-color: var(--primary, #6c757d) !important;
+                color: white !important;
+                cursor: pointer !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                transition: all 0.2s ease !important;
+                z-index: 9999 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            `;
+
+            // Verificar posição após aplicar
+            const computedStyle = window.getComputedStyle(this.fabElement);
+            const position = computedStyle.getPropertyValue('position');
+
+            logger.info('FAB position forced:', { position });
+
+            // Se ainda não está fixed, tentar novamente
+            if (position !== 'fixed') {
+                logger.warn('FAB position is not fixed, retrying...');
+                setTimeout(() => this.forceFabPosition(), 100);
+            }
+        }, 50);
     }
 
     /**

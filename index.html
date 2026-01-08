@@ -55,5 +55,52 @@
 
     <!-- App Module -->
     <script type="module" src="app.js"></script>
+
+    <!-- FAB Mobile Fix - Garante que o botão flutue corretamente -->
+    <script>
+        // Este script roda imediatamente e corrige a posição do FAB
+        // Funciona mesmo se o JavaScript estiver cacheado
+        (function() {
+            'use strict';
+
+            function fixFabPosition() {
+                const fab = document.querySelector('.fab.fab--primary');
+                if (fab) {
+                    // Forçar position: fixed e posição correta
+                    fab.style.setProperty('position', 'fixed', 'important');
+                    fab.style.setProperty('bottom', '16px', 'important');
+                    fab.style.setProperty('right', '16px', 'important');
+                    fab.style.setProperty('z-index', '9999', 'important');
+
+                    // Log para debug
+                    console.log('[FAB Fix] Botão corrigido para position: fixed');
+
+                    // Verificar se funcionou
+                    const computed = window.getComputedStyle(fab);
+                    if (computed.position === 'fixed') {
+                        console.log('[FAB Fix] ✅ Sucesso! Botão está flutuando');
+                    } else {
+                        console.warn('[FAB Fix] ❌ Falha! Position ainda é:', computed.position);
+                    }
+                } else {
+                    console.log('[FAB Fix] Botão ainda não existe, tentando novamente em 100ms...');
+                    setTimeout(fixFabPosition, 100);
+                }
+            }
+
+            // Tentar corrigir em diferentes momentos
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fixFabPosition);
+            } else {
+                fixFabPosition();
+            }
+
+            // Tentar novamente após carregamento completo
+            window.addEventListener('load', fixFabPosition);
+
+            // Tentar novamente após 1 segundo (backup)
+            setTimeout(fixFabPosition, 1000);
+        })();
+    </script>
 </body>
 </html>
