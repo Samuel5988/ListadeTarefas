@@ -42,17 +42,50 @@ export class TaskForm {
 
         this.fabElement = document.createElement('button');
         this.fabElement.className = 'fab fab--primary';
+
+        // Estilos inline para garantir funcionamento em mobile (sobrescreve Tailwind e outros CSS)
+        this.fabElement.style.cssText = `
+            position: fixed !important;
+            bottom: 16px !important;
+            right: 16px !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            border-radius: 50% !important;
+            border: none !important;
+            background-color: var(--primary, #6c757d) !important;
+            color: white !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            transition: all 0.2s ease !important;
+            z-index: 9999 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        `;
+
         this.fabElement.innerHTML = `
-            <svg class="fab__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg class="fab__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 24px; height: 24px;">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span class="sr-only">Adicionar nova tarefa</span>
         `;
 
+        // Event listeners com feedback visual
         this.fabElement.addEventListener('click', () => this.open());
+        this.fabElement.addEventListener('touchstart', () => {
+            this.fabElement.style.transform = 'scale(0.95)';
+        });
+        this.fabElement.addEventListener('touchend', () => {
+            this.fabElement.style.transform = 'scale(1)';
+        });
+
         document.body.appendChild(this.fabElement);
 
-        logger.debug('FAB created');
+        logger.debug('FAB created with inline styles');
     }
 
     /**
