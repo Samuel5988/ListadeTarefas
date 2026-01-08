@@ -56,49 +56,146 @@
     <!-- App Module -->
     <script type="module" src="app.js"></script>
 
-    <!-- FAB Mobile Fix - Garante que o botão flutue corretamente -->
+    <!-- FAB Mobile Fix - Solução robusta para navegadores mobile -->
     <script>
-        // Este script roda imediatamente e corrige a posição do FAB
-        // Funciona mesmo se o JavaScript estiver cacheado
+        // Solução que funciona em desktop e mobile
+        // Usa position: fixed para desktop e fallback para mobile
         (function() {
             'use strict';
 
+            let fabElement = null;
+            let rafId = null;
+
             function fixFabPosition() {
-                const fab = document.querySelector('.fab.fab--primary');
-                if (fab) {
-                    // Forçar position: fixed e posição correta
-                    fab.style.setProperty('position', 'fixed', 'important');
-                    fab.style.setProperty('bottom', '16px', 'important');
-                    fab.style.setProperty('right', '16px', 'important');
-                    fab.style.setProperty('z-index', '9999', 'important');
-
-                    // Log para debug
-                    console.log('[FAB Fix] Botão corrigido para position: fixed');
-
-                    // Verificar se funcionou
-                    const computed = window.getComputedStyle(fab);
-                    if (computed.position === 'fixed') {
-                        console.log('[FAB Fix] ✅ Sucesso! Botão está flutuando');
-                    } else {
-                        console.warn('[FAB Fix] ❌ Falha! Position ainda é:', computed.position);
-                    }
-                } else {
-                    console.log('[FAB Fix] Botão ainda não existe, tentando novamente em 100ms...');
+                fabElement = document.querySelector('.fab.fab--primary');
+                if (!fabElement) {
                     setTimeout(fixFabPosition, 100);
+                    return;
+                }
+
+                // Detectar se é mobile
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+                                window.innerWidth < 768;
+
+                console.log('[FAB Fix] Dispositivo:', isMobile ? 'Mobile' : 'Desktop');
+
+                if (isMobile) {
+                    // SOLUÇÃO PARA MOBILE: position: fixed com correções
+                    applyMobileStyles();
+                } else {
+                    // SOLUÇÃO PARA DESKTOP: position: fixed padrão
+                    applyDesktopStyles();
                 }
             }
 
-            // Tentar corrigir em diferentes momentos
+            function applyMobileStyles() {
+                if (!fabElement) return;
+
+                // Remover do当前位置 e readicionar ao body
+                if (fabElement.parentNode !== document.body) {
+                    document.body.appendChild(fabElement);
+                }
+
+                // Aplicar estilos inline para mobile
+                fabElement.style.cssText = `
+                    position: fixed !important;
+                    bottom: 16px !important;
+                    right: 16px !important;
+                    width: 56px !important;
+                    height: 56px !important;
+                    min-width: 56px !important;
+                    min-height: 56px !important;
+                    border-radius: 50% !important;
+                    background-color: var(--primary, #6c757d) !important;
+                    color: white !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    z-index: 99999 !important;
+                    border: none !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    -webkit-transform: translateZ(0) !important;
+                    transform: translateZ(0) !important;
+                    -webkit-backface-visibility: hidden !important;
+                    backface-visibility: hidden !important;
+                `;
+
+                // Forçar repaint
+                fabElement.offsetHeight;
+
+                // Verificar se funcionou
+                const computed = window.getComputedStyle(fabElement);
+                console.log('[FAB Fix] Mobile - position:', computed.position);
+
+                if (computed.position !== 'fixed') {
+                    console.warn('[FAB Fix] ❌ MOBILE: Position ainda é', computed.position);
+                    console.log('[FAB Fix] Tentando fallback com position: absolute + scroll listener');
+                    applyScrollFallback();
+                } else {
+                    console.log('[FAB Fix] ✅ MOBILE: Botão está flutuando!');
+                }
+            }
+
+            function applyDesktopStyles() {
+                if (!fabElement) return;
+
+                fabElement.style.cssText = `
+                    position: fixed !important;
+                    bottom: 24px !important;
+                    right: 24px !important;
+                    width: 56px !important;
+                    height: 56px !important;
+                    border-radius: 50% !important;
+                    z-index: 9999 !important;
+                `;
+
+                console.log('[FAB Fix] ✅ DESKTOP: Botão configurado');
+            }
+
+            // Fallback: usa position: absolute + listener de scroll
+            function applyScrollFallback() {
+                if (!fabElement) return;
+
+                // Mudar para position: absolute
+                fabElement.style.setProperty('position', 'absolute', 'important');
+
+                // Função para atualizar posição baseada no scroll
+                function updatePosition() {
+                    if (!fabElement) return;
+
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    const windowHeight = window.innerHeight;
+
+                    fabElement.style.setProperty('top', (scrollY + windowHeight - 72) + 'px', 'important');
+                    fabElement.style.setProperty('right', '16px', 'important');
+
+                    // Continuar atualizando
+                    if (rafId) {
+                        cancelAnimationFrame(rafId);
+                    }
+                    rafId = requestAnimationFrame(updatePosition);
+                }
+
+                // Iniciar atualização
+                updatePosition();
+
+                console.log('[FAB Fix] ⚠️ Usando fallback scroll-based');
+            }
+
+            // Iniciar
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', fixFabPosition);
             } else {
                 fixFabPosition();
             }
 
-            // Tentar novamente após carregamento completo
+            // Tentar novamente após load
             window.addEventListener('load', fixFabPosition);
 
-            // Tentar novamente após 1 segundo (backup)
+            // Backup
+            setTimeout(fixFabPosition, 500);
             setTimeout(fixFabPosition, 1000);
         })();
     </script>
