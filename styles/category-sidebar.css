@@ -345,7 +345,7 @@ main {
 }
 
 [data-theme="dark"] .category-sidebar__add-btn {
-    background: var(--gray-6);
+    background: var(--gray-4);
     color: var(--text-dark-primary);
     border-color: var(--border-dark-color);
 }
@@ -353,6 +353,12 @@ main {
 [data-theme="dark"] .category-sidebar__add-btn:hover {
     background: var(--gray-7);
     border-color: var(--gray-5);
+}
+
+/* Dark mode para o rodapé do menu - corrigir contraste */
+[data-theme="dark"] .task-summary__total,
+[data-theme="dark"] .task-summary__active {
+    color: var(--gray-6);
 }
 
 /* Animations */

@@ -452,7 +452,7 @@ export class TaskEditForm {
         toast.className = 'toast toast--error';
         toast.textContent = message;
         toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
+        toast.style.top = '20px';
         toast.style.right = '20px';
         toast.style.zIndex = '9999';
 

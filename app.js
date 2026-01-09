@@ -894,7 +894,7 @@ class TaskApp {
         };
 
         const notification = document.createElement('div');
-        notification.className = `fixed bottom-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
+        notification.className = `fixed top-16 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in`;
         notification.textContent = message;
 
         document.body.appendChild(notification);
@@ -1155,7 +1155,7 @@ class TaskApp {
         toast.className = `toast toast--${type}`;
         toast.textContent = message;
         toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
+        toast.style.top = '20px';
         toast.style.right = '20px';
         toast.style.zIndex = '9999';
 

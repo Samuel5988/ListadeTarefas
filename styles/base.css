@@ -41,6 +41,7 @@
     /* Borders */
     --border-width: 1px;
     --border-radius: 0.375rem;
+    --border-radius-md: 0.5rem;
     --border-radius-lg: 0.5rem;
 
     /* Tipografia */
@@ -213,4 +214,104 @@ select:focus {
 
 .slide-in {
     animation: slideIn var(--transition-normal);
+}
+
+/* Site Footer - Footer principal da página */
+.site-footer {
+    position: fixed;
+    bottom: 0;
+    left: var(--sidebar-width, 280px);
+    right: 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    background-color: var(--gray-2);
+    border-top: 1px solid var(--gray-3);
+    color: var(--gray-6);
+    transition: background-color var(--transition-normal), border-color var(--transition-normal), color var(--transition-normal);
+    z-index: 50;
+    text-align: center;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+/* Dark mode para o site footer */
+[data-theme="dark"] .site-footer {
+    background-color: var(--gray-2);
+    border-top-color: var(--gray-3);
+    color: var(--gray-7);
+}
+
+/* Ajustar quando a sidebar está colapsada */
+.main-container--sidebar-collapsed .site-footer,
+.max-w-7xl--sidebar-collapsed .site-footer {
+    left: 0;
+}
+
+/* Ajuste para mobile */
+@media (max-width: 768px) {
+    .site-footer {
+        left: 0;
+    }
+}
+
+/* Site Header - Header principal da página */
+.site-header {
+    background-color: var(--gray-2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--gray-3);
+    transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.site-header__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-8);
+    margin: 0;
+    transition: color var(--transition-normal);
+}
+
+/* Dark mode para o site header */
+[data-theme="dark"] .site-header {
+    background-color: var(--gray-2);
+    border-bottom-color: var(--gray-3);
+}
+
+[data-theme="dark"] .site-header__title {
+    color: var(--gray-9);
+}
+
+/* Site Card - Cards genéricos da página */
+.site-card {
+    background-color: var(--gray-2);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    transition: background-color var(--transition-normal);
+}
+
+.site-card__title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: var(--gray-8);
+}
+
+.site-card__text {
+    color: var(--gray-6);
+    margin: 0;
+}
+
+/* Dark mode para o site card */
+[data-theme="dark"] .site-card {
+    background-color: var(--gray-3);
+}
+
+[data-theme="dark"] .site-card__title {
+    color: var(--gray-9);
+}
+
+[data-theme="dark"] .site-card__text {
+    color: var(--gray-7);
 }

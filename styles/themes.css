@@ -189,6 +189,29 @@ input:checked + .theme-slider:before {
     content: "🌙";
 }
 
+/* Hover state para toggle switch */
+.theme-slider:hover {
+    background-color: var(--gray-5);
+}
+
+input:checked + .theme-slider:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Focus state para acessibilidade */
+.theme-toggle input:focus + .theme-slider {
+    box-shadow: 0 0 0 3px rgba(134, 142, 150, 0.3);
+}
+
+/* Dark mode hover states */
+[data-theme="dark"] .theme-slider:hover {
+    background-color: var(--gray-3);
+}
+
+[data-theme="dark"] input:checked + .theme-slider:hover {
+    background-color: var(--primary-light);
+}
+
 /* Preferência do sistema operacional */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {

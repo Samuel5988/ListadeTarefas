@@ -18,12 +18,12 @@
     <link rel="stylesheet" href="styles/theme-fix.css">
     <link rel="stylesheet" href="styles/responsive.css">
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
+<body class="min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200" role="banner">
+    <header class="site-header" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <h1 class="text-xl font-semibold text-gray-900">Lista de Tarefas</h1>
+                <h1 class="site-header__title">Lista de Tarefas</h1>
                 <div class="flex items-center gap-3">
                     <div id="sort-toggle-container"></div>
                     <div id="reminder-counter-container"></div>
@@ -37,17 +37,17 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Placeholder para futuros componentes -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-medium mb-4">Bem-vindo!</h2>
-                <p class="text-gray-600">Seu aplicativo de lista de tarefas está sendo configurado.</p>
+            <div class="site-card">
+                <h2 class="site-card__title">Bem-vindo!</h2>
+                <p class="site-card__text">Seu aplicativo de lista de tarefas está sendo configurado.</p>
             </div>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-16" role="contentinfo">
+    <footer class="site-footer" role="contentinfo">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <p class="text-center text-sm text-gray-500">
+            <p class="text-center text-sm">
                 © 2026 Lista de Tarefas. Desenvolvido com HTML5, CSS3 e JavaScript.
             </p>
         </div>
