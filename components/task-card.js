@@ -9,6 +9,7 @@ import { STATE_EVENTS } from '../state/app-state.js';
 import { logger } from '../utils/logger.js';
 import { formatDateWithLabel, isToday, isTomorrow, isPast } from '../utils/date-utils.js';
 import { PostponeMenu, closeAllPostponeMenus } from './postpone-menu.js';
+import { reminderChecker } from '../services/reminder-checker.js';
 
 /**
  * Mapeamento de prioridades para cores (conforme UX specification)
@@ -55,9 +56,13 @@ export class TaskCard {
         this.handleMouseEnter = this.handleMouseEnter.bind(this);
         this.handleMouseLeave = this.handleMouseLeave.bind(this);
         this.handleReminderActivated = this.handleReminderActivated.bind(this);
+        this.handleReminderSoundStarted = this.handleReminderSoundStarted.bind(this);
+        this.handleReminderSoundStopped = this.handleReminderSoundStopped.bind(this);
 
         // Listener global para lembretes ativos (bound para remover depois)
         this.reminderActivatedBound = this.handleReminderActivated.bind(this);
+        this.soundStartedBound = this.handleReminderSoundStarted.bind(this);
+        this.soundStoppedBound = this.handleReminderSoundStopped.bind(this);
 
         logger.debug('TaskCard created', { taskId: this.task.id });
     }
@@ -615,6 +620,40 @@ export class TaskCard {
     }
 
     /**
+     * Manipula evento de som de lembrete iniciado
+     * Adiciona destaque visual indicando que o som está tocando
+     * @param {CustomEvent} e - Evento de som iniciado
+     */
+    handleReminderSoundStarted(e) {
+        if (e.detail.taskId === this.task.id) {
+            // Adicionar classe especial para indicar som tocando
+            this.element.classList.add('task-card--sound-playing');
+
+            // Adicionar animação mais intensa
+            this.element.style.animation = 'reminder-pulse 1s ease-in-out infinite';
+
+            logger.info('Reminder sound started, visual highlight added', { taskId: this.task.id });
+        }
+    }
+
+    /**
+     * Manipula evento de som de lembrete parado
+     * Remove destaque visual
+     * @param {CustomEvent} e - Evento de som parado
+     */
+    handleReminderSoundStopped(e) {
+        if (e.detail.taskId === this.task.id) {
+            // Remover classe de som tocando
+            this.element.classList.remove('task-card--sound-playing');
+
+            // Remover animação intensa, voltar ao normal se ainda tiver lembrete ativo
+            this.element.style.animation = '';
+
+            logger.info('Reminder sound stopped, visual highlight removed', { taskId: this.task.id });
+        }
+    }
+
+    /**
      * Adiciona os event listeners necessários
      */
     addEventListeners() {
@@ -648,6 +687,10 @@ export class TaskCard {
                 !priorityIndicator?.contains(e.target)) {
                 this.handleCardClick();
             }
+
+            // IMPORTANTE: Parar som do lembrete ao clicar na tarefa
+            // Isso interrompe o som intermitente quando o usuário interage com a tarefa
+            reminderChecker.stopReminderSound(this.task.id);
         });
 
         // Listener para clique duplo (exclusão)
@@ -659,6 +702,10 @@ export class TaskCard {
 
         // Listener para ativação de lembrete (evento global)
         window.addEventListener('reminder:activated', this.reminderActivatedBound);
+
+        // Listeners para som de lembrete (início e parada)
+        window.addEventListener('reminder:sound:started', this.soundStartedBound);
+        window.addEventListener('reminder:sound:stopped', this.soundStoppedBound);
     }
 
     /**

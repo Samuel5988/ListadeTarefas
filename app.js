@@ -10,6 +10,7 @@ import { appState, STATE_EVENTS } from './state/app-state.js';
 import { taskStorage } from './services/task-storage.js';
 import { reminderChecker } from './services/reminder-checker.js';
 import { ThemeManager } from './components/theme-manager.js';
+import { SoundToggle } from './components/sound-toggle.js';
 import { TaskCard } from './components/task-card.js';
 import { taskForm } from './components/task-form.js';
 import { TaskEditForm } from './components/task-edit-form.js';
@@ -179,6 +180,9 @@ class TaskApp {
         // Inicializar ThemeManager
         this.initializeThemeManager();
 
+        // Inicializar SoundToggle
+        this.initializeSoundToggle();
+
         // Inicializar Sort Toggle
         this.initializeSortToggle();
 
@@ -231,6 +235,34 @@ class TaskApp {
             logger.info('ThemeManager initialized successfully');
         } catch (error) {
             logger.error('Failed to initialize ThemeManager', error);
+        }
+    }
+
+    /**
+     * Inicializa o SoundToggle
+     */
+    initializeSoundToggle() {
+        try {
+            logger.info('Initializing SoundToggle...');
+
+            // Criar instância do SoundToggle
+            this.soundToggle = new SoundToggle(appState);
+
+            // Adicionar botão ao container no header
+            const toggleContainer = document.getElementById('sound-toggle-container');
+            if (toggleContainer && this.soundToggle.getToggleElement()) {
+                toggleContainer.appendChild(this.soundToggle.getToggleElement());
+                logger.info('Sound toggle button added to header');
+            } else {
+                logger.warn('sound-toggle-container not found');
+            }
+
+            // Armazenar referência
+            this.components.set('soundToggle', this.soundToggle);
+
+            logger.info('SoundToggle initialized successfully');
+        } catch (error) {
+            logger.error('Failed to initialize SoundToggle', error);
         }
     }
 
@@ -347,6 +379,13 @@ class TaskApp {
 
             // Iniciar verificação periódica
             reminderChecker.start();
+
+            // IMPORTANTE: Verificar TODAS as tarefas vencidas ao iniciar
+            // Isso garante que alarmes disparem mesmo para tarefas que já estavam vencidas
+            // quando o app foi aberto
+            setTimeout(() => {
+                reminderChecker.checkAllOverdueReminders();
+            }, 1000); // Delay de 1 segundo para garantir que UI está pronta
 
             // Adicionar contador no header
             this.setupReminderCounter();

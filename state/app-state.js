@@ -19,6 +19,7 @@ export const STATE_EVENTS = {
     THEME_CHANGED: 'theme:changed',
     CATEGORIES_CHANGED: 'categories:changed',
     STATE_RESET: 'state:reset',
+    SOUND_SETTING_CHANGED: 'sound:setting:changed',
 };
 
 // Estado inicial da aplicação conforme Story 1.2 + implementação Story 1.1
@@ -54,6 +55,7 @@ const initialState = {
     settings: {
         autoSave: true,
         notifications: true,
+        soundEnabled: true,
         dateFormat: 'DD/MM/YYYY',
         itemsPerPage: 10,
     },
@@ -477,10 +479,26 @@ class AppState {
         if ('showCompleted' in settings) {
             preferencesToSave.showCompleted = settings.showCompleted;
         }
+        if ('soundEnabled' in settings) {
+            preferencesToSave.soundEnabled = settings.soundEnabled;
+        }
 
         if (Object.keys(preferencesToSave).length > 0) {
             this.savePreferences(preferencesToSave);
         }
+    }
+
+    /**
+     * Atualiza configuração de som e sincroniza com SoundService
+     * @param {boolean} enabled - Estado do som
+     */
+    updateSoundSetting(enabled) {
+        this.updateSettings({ soundEnabled: enabled });
+
+        // Disparar evento para UI atualizar
+        this.dispatch(STATE_EVENTS.SOUND_SETTING_CHANGED, { enabled });
+
+        logger.info('Sound setting updated', { enabled });
     }
 
     /**
@@ -996,6 +1014,10 @@ class AppState {
 
                 if ('showCompleted' in parsedPreferences) {
                     this.state.preferences.showCompleted = parsedPreferences.showCompleted;
+                }
+
+                if ('soundEnabled' in parsedPreferences) {
+                    this.state.settings.soundEnabled = parsedPreferences.soundEnabled;
                 }
 
                 logger.info('Preferences loaded', parsedPreferences);

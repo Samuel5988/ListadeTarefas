@@ -412,8 +412,15 @@ export class CategorySidebar {
      */
     filterByCategory(categoryName) {
         try {
-            this.appState.updateFilter({ category: categoryName });
+            // Resetar o filtro de dueDate ao mudar de categoria
+            // Isso permite ver todas as tarefas da categoria selecionada
+            this.appState.updateFilter({
+                category: categoryName,
+                dueDate: 'all'
+            });
             this.updateActiveFilter();
+            // Remover destaque das seções de lembrete
+            this.updateActiveReminderFilter('all');
         } catch (error) {
             logger.error('Error applying filter', error);
             this.showError('Erro ao aplicar filtro. Tente novamente.');

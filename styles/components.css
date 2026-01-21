@@ -532,6 +532,25 @@
     transition: all 0.3s ease;
 }
 
+/* Sound Playing State - destaque mais intenso quando som está tocando */
+.task-card--sound-playing {
+    border: 3px solid #ff6b6b !important;
+    animation: sound-playing-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+    transform: scale(1.02);
+}
+
+@keyframes sound-playing-pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+        transform: scale(1.02);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 107, 107, 0.9);
+        transform: scale(1.03);
+    }
+}
+
 @keyframes reminder-pulse {
     0%, 100% {
         box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
@@ -1635,4 +1654,105 @@
         left: 1rem;
         padding: 0.75rem 1rem;
     }
+}
+
+/* ==================== SOUND TOGGLE ==================== */
+
+.sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    background-color: transparent;
+    border: 1px solid var(--gray-3);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.sound-toggle:hover {
+    background-color: var(--gray-2);
+    border-color: var(--gray-4);
+}
+
+.sound-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.sound-toggle__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.sound-toggle--on .sound-toggle__icon--off {
+    display: none;
+}
+
+.sound-toggle--off .sound-toggle__icon--on {
+    display: none;
+}
+
+.sound-toggle svg {
+    width: 20px;
+    height: 20px;
+    color: var(--gray-6);
+}
+
+.sound-toggle:hover svg {
+    color: var(--gray-7);
+}
+
+/* Active state */
+.sound-toggle--on {
+    background-color: #e7f3ff;
+    border-color: var(--primary);
+}
+
+.sound-toggle--on svg {
+    color: var(--primary);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .sound-toggle {
+    border-color: var(--gray-5);
+}
+
+[data-theme="dark"] .sound-toggle:hover {
+    background-color: var(--gray-6);
+    border-color: var(--gray-4);
+}
+
+[data-theme="dark"] .sound-toggle svg {
+    color: var(--gray-4);
+}
+
+[data-theme="dark"] .sound-toggle--on {
+    background-color: rgba(0, 123, 255, 0.2);
+    border-color: var(--primary);
+}
+
+[data-theme="dark"] .sound-toggle--on svg {
+    color: var(--primary);
+}
+
+/* Pulse animation when enabled */
+@keyframes sound-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(0, 123, 255, 0);
+    }
+}
+
+.sound-toggle--on:focus {
+    animation: sound-pulse 1.5s ease-in-out;
 }
